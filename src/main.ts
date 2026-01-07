@@ -1,5 +1,38 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
+import {App, Editor, MarkdownView, Modal, Notice, Plugin, ItemView, WorkspaceLeaf} from 'obsidian';
 import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { createTicker } from "./ticker";
+
+const VIEW_TYPE_MY_PANEL = "my-plugin-panel";
+
+class MyPanelView extends ItemView {
+  constructor(leaf: WorkspaceLeaf) {
+    super(leaf);
+  }
+
+  getViewType() {
+    return VIEW_TYPE_MY_PANEL;
+  }
+
+  getIcon() {
+	return "rss";
+  }
+
+  getDisplayText() {
+    return "News";
+  }
+
+  async onOpen() {
+    const container = this.containerEl; // main content area
+    container.empty();
+    container.createEl("h2", { text: "NIGGER" });
+	createTicker(container, ["Nigger", "Nigger", "Nigger"]);
+    // add more DOM/UI here
+  }
+
+  async onClose() {
+    // clean up if needed
+  }
+}
 
 // Remember to rename these classes and interfaces!
 
@@ -10,21 +43,26 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
+		this.addRibbonIcon('rss', 'Open my Panel', () => {
 			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+			const leaf = this.app.workspace.getLeaf(true);
+			leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
+			this.app.workspace.revealLeaf(leaf);
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status bar text');
+		this.registerView(VIEW_TYPE_MY_PANEL, (leaf) => new MyPanelView(leaf));
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
+			id: 'open-my-panel',
+			name: 'Open my Panel',
 			callback: () => {
-				new SampleModal(this.app).open();
+				const leaf = this.app.workspace.getLeaf(true);
+				leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
+				this.app.workspace.revealLeaf(leaf);
 			}
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
@@ -46,7 +84,7 @@ export default class MyPlugin extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new SampleModal(this.app).open();
+						new MyPanelView(this.app.workspace.getLeaf(true));
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -79,21 +117,5 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
 	}
 }

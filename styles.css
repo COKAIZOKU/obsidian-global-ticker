@@ -1,8 +1,25 @@
-/*
+body {
+    overflow: hidden;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.ticker {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+}
 
-If your plugin does not need CSS, delete this file.
+.ticker-list {
+    display: flex;
+    animation: ticker-scroll 20s linear infinite;
+    margin-top: 20px;
+}
 
-*/
+.ticker:hover .ticker-list {
+    animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+    100% {
+        transform: translateX(-100%);
+    }
+}
