@@ -24,8 +24,8 @@ class MyPanelView extends ItemView {
   async onOpen() {
     const container = this.containerEl; // main content area
     container.empty();
-    container.createEl("h2", { text: "NIGGER" });
-	createTicker(container, ["Nigger", "Nigger", "Nigger"]);
+    container.createEl("h2", { text: "Title" });
+	createTicker(container, ["Word 1", "Word 2", "Word 3"]);
     // add more DOM/UI here
   }
 
