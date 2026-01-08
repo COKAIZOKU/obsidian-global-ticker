@@ -24,7 +24,6 @@ class MyPanelView extends ItemView {
   async onOpen() {
     const container = this.containerEl; // main content area
     container.empty();
-    container.createEl("h2", { text: "Title" });
     const scroller = container.createDiv({ cls: "scroller" });
     scroller.setAttribute("data-speed", "fast");
 

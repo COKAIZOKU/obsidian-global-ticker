@@ -10,10 +10,6 @@
   gap: 1rem;
 }
 
-.scroller[data-animated="true"] {
-  overflow: hidden;
-}
-
 .scroller[data-animated="true"] .scroller__inner {
   width: max-content;
   flex-wrap: nowrap;

@@ -28,3 +28,5 @@ export function initTicker(root: ParentNode = document): void {
     });
   });
 }
+
+// From https://codepen.io/kevinpowell/pen/BavVLra
