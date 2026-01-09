@@ -28,18 +28,29 @@ class MyPanelView extends ItemView {
     scroller.setAttribute("data-speed", "slow");
 
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
-    const tags = ["Word 1", "Word 2", "Word 3", "Word 4", "Word 5", "Word 6", "Word 7"];
-    tags.forEach((tag) => {
-      list.createEl("li", { text: tag });
+    const headlines = ["Fourth Slice of Pizza Consumed Without Facial Expression", "Man's Mouth All Dry From Complaining", "Play Within A Play Also Boring", "Amazing Psychic Bends Truth With Minds"];
+    headlines.forEach((headline) => {
+      list.createEl("li", { text: headline });
     });
 
     const stockScroller = container.createDiv({ cls: "scroller" });
     stockScroller.setAttribute("data-speed", "slow");
 
-    const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
-    const stocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META"];
-    stocks.forEach((stock) => {
-      stockList.createEl("li", { text: stock });
+    const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner", "stock-list"] });
+    const stocks: Array<[string, string, string]> = [
+      ["AAPL", "$196.58" , "+1.24%"],
+      ["MSFT", "$330.72", "-0.72%"],
+      ["GOOGL", "$135.58", "+0.58%"],
+      ["AMZN", "$310.31", "+0.31%"],
+      ["TSLA", "$705.05", "-1.05%"],
+      ["NVDA", "$220.11", "+2.11%"],
+      ["META", "$250.00", "-0.44%"],
+    ];
+    stocks.forEach(([symbol, price, change]) => {
+      const item = stockList.createEl("li", { cls: "stock-item" });
+      item.createSpan({ text: symbol });
+      item.createSpan({ text: price, cls: "stock-price" });
+      item.createSpan({ text: change, cls: "stock-change" });
     });
     initTicker(container);
   }

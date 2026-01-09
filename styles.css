@@ -48,6 +48,7 @@
 .tag-list {
   margin: 0;
   padding-inline: 0;
+  list-style: none;
 }
 
 .tag-list li {
@@ -55,7 +56,23 @@
   border-radius: 0.5rem;
 }
 
-/* for testing purposed to ensure the animation lined up correctly */
-.test {
-  background: red !important;
+.stock-list {
+  list-style: none;
+  padding-inline: 0;
+}
+
+.stock-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stock-change {
+  color: var(--text-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-price {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
