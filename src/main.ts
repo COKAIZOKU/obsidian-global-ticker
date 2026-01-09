@@ -32,6 +32,15 @@ class MyPanelView extends ItemView {
     tags.forEach((tag) => {
       list.createEl("li", { text: tag });
     });
+
+    const stockScroller = container.createDiv({ cls: "scroller" });
+    stockScroller.setAttribute("data-speed", "slow");
+
+    const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
+    const stocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META"];
+    stocks.forEach((stock) => {
+      stockList.createEl("li", { text: stock });
+    });
     initTicker(container);
   }
 

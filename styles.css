@@ -9,6 +9,12 @@
   overflow: hidden;
 }
 
+.scroller + .scroller {
+  margin-top: auto;
+  margin-bottom: auto;
+  border-top: 1px solid var(--color-base-30);
+}
+
 .scroller[data-animated="true"] .scroller__inner {
   width: max-content;
   flex-wrap: nowrap;
