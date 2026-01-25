@@ -13,6 +13,7 @@ export interface MyPluginSettings {
 	currentsLimit: number;
 	currentsRegion: string;
 	currentsLanguage: string;
+	currentsDomains: string;
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
@@ -24,7 +25,8 @@ export const DEFAULT_SETTINGS: MyPluginSettings = {
 	currentsCategory: "",
 	currentsLimit: 5,
 	currentsRegion: "",
-	currentsLanguage: ""
+	currentsLanguage: "",
+	currentsDomains: ""
 }
 
 const CURRENTS_REGIONS: Array<[string, string]> = [
@@ -169,7 +171,7 @@ export class SampleSettingTab extends PluginSettingTab {
 		
 		containerEl.createEl('div', {text: 'News Settings', cls: 'setting-item-name setting-section-header'});
 		containerEl.createEl('div', {
-			text: 'These settings are for the news ticker. The news are fetched from the Currents News API. Beware the amount of headlines displayed depends on the available headlines.',
+			text: 'These settings are for the news ticker. The news are fetched from the Currents News API. Beware the amount of headlines displayed depends on the available headlines. For example, if you set the limit to 10 but only 5 headlines are available for your specified settings, only 5 will be shown.',
 			cls: 'setting-item-description setting-section-description'
 		});
 
@@ -202,6 +204,21 @@ export class SampleSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.currentsCategory)
 				.onChange(async (value) => {
 					this.plugin.settings.currentsCategory = value.trim();
+					await this.plugin.saveSettings();
+				}));
+		const descDomains = createFragment();
+		descDomains.appendText('Filter headlines by source domain(s). To see if a domain is supported, search for it ');
+		descDomains.appendChild(createEl('a', {text: 'here', href: 'https://www.currentsapi.services/en/statistic/'}));
+		descDomains.appendText('.');
+
+		new Setting(containerEl)
+			.setName('Domains')
+			.setDesc(descDomains)
+			.addText(text => text
+				.setPlaceholder('e.g. bbc.com, nytimes.com')
+				.setValue(this.plugin.settings.currentsDomains)
+				.onChange(async (value) => {
+					this.plugin.settings.currentsDomains = value.trim();
 					await this.plugin.saveSettings();
 				}));
 
@@ -237,7 +254,7 @@ export class SampleSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Headline limit')
-			.setDesc('Number of headlines to fetch, the limit is 10 with the free API key.')
+			.setDesc('Number of headlines to fetch. The limit is 10 with the free API key.')
 			.addText(text => {
 				text.inputEl.type = "number";
 				text
@@ -257,7 +274,7 @@ export class SampleSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Refresh headlines')
-			.setDesc('Fetch fresh headlines.')
+			.setDesc('Fetch fresh headlines. The limit is 20 requests daily with the free API key.')
 			.addButton(button => {
 				button
 					.setButtonText('Refresh')

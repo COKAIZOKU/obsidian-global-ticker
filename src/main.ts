@@ -17,6 +17,31 @@ const FALLBACK_HEADLINES: HeadlineItem[] = [
   { title: "Sample Headline 4: These Are Just Placeholder!" },
 ];
 
+const normalizeDomains = (input: string): string[] => {
+  if (!input) {
+    return [];
+  }
+
+  return input
+    .split(",")
+    .map((raw: string) => raw.trim())
+    .filter((value): value is string => value.length > 0)
+    .map((raw: string) => {
+      const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw)
+        ? raw
+        : `https://${raw}`;
+      try {
+        const hostname = new URL(withScheme).hostname.toLowerCase();
+        return hostname.startsWith("www.") ? hostname.slice(4) : hostname;
+      } catch {
+        const fallback = raw.split(/[/?#]/)[0] ?? "";
+        const normalized = fallback.toLowerCase();
+        return normalized.startsWith("www.") ? normalized.slice(4) : normalized;
+      }
+    })
+    .filter(Boolean);
+};
+
 const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
   if (!item) {
     return null;
@@ -262,10 +287,12 @@ export default class MyPlugin extends Plugin {
 	}
 
 	private buildHeadlinesCacheKey(resolvedLimit: number) {
+		const domains = normalizeDomains(this.settings.currentsDomains).join(",");
 		return JSON.stringify({
 			category: this.settings.currentsCategory.trim(),
 			region: this.settings.currentsRegion.trim(),
 			language: this.settings.currentsLanguage.trim(),
+			domains,
 			limit: resolvedLimit,
 		});
 	}
@@ -279,21 +306,66 @@ export default class MyPlugin extends Plugin {
 		const category = this.settings.currentsCategory.trim();
 		const region = this.settings.currentsRegion.trim();
 		const language = this.settings.currentsLanguage.trim();
+		const domains = normalizeDomains(this.settings.currentsDomains);
 
-		const results = await fetchCurrentsHeadlines({
+		const baseOptions = {
 			apiKey,
-			endpoint: "latest-news",
 			limit: resolvedLimit,
 			category: category.length > 0 ? category : undefined,
 			country: region.length > 0 ? region : undefined,
 			language: language.length > 0 ? language : undefined,
+		};
+
+		if (domains.length > 0) {
+			const startDate = new Date(Date.now() - HEADLINE_CACHE_TTL_MS).toISOString();
+			const collected: HeadlineItem[] = [];
+			const seen = new Set<string>();
+
+			for (const domain of domains) {
+				const domainResults = await fetchCurrentsHeadlines({
+					...baseOptions,
+					endpoint: "search",
+					params: {
+						domain,
+						start_date: startDate,
+						limit: resolvedLimit,
+					},
+				});
+
+				domainResults.forEach((item) => {
+					const normalized = normalizeHeadlineItem({
+						title: item.title,
+						url: item.url,
+					});
+					if (!normalized) {
+						return;
+					}
+					const key = normalized.url ?? normalized.title;
+					if (seen.has(key)) {
+						return;
+					}
+					seen.add(key);
+					collected.push(normalized);
+				});
+
+				if (collected.length >= resolvedLimit) {
+					break;
+				}
+			}
+
+			return collected.slice(0, resolvedLimit);
+		}
+
+		const results = await fetchCurrentsHeadlines({
+			...baseOptions,
+			endpoint: "latest-news",
 		});
 
-    const headlines = results
-      .map((item) => normalizeHeadlineItem({ title: item.title, url: item.url }))
-      .filter((item): item is HeadlineItem => Boolean(item));
+		const headlines = results
+			.map((item) => normalizeHeadlineItem({ title: item.title, url: item.url }))
+			.filter((item): item is HeadlineItem => Boolean(item));
 
-    return headlines;
+		return headlines;
   }
 
 	private async savePluginData() {
