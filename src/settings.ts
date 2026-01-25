@@ -1,4 +1,4 @@
-import {App, PluginSettingTab, Setting} from "obsidian";
+import {App, Notice, PluginSettingTab, Setting} from "obsidian";
 import MyPlugin from "./main";
 
 export type TickerSpeed = "fast" | "slow" | "medium";
@@ -264,8 +264,17 @@ export class SampleSettingTab extends PluginSettingTab {
 					.setCta()
 					.onClick(async () => {
 						button.setDisabled(true);
-						await this.plugin.refreshHeadlines();
-						button.setDisabled(false);
+						button.setButtonText("Refreshing...");
+						try {
+							await this.plugin.refreshHeadlines();
+							new Notice("Headlines refreshed.");
+						} catch (error) {
+							console.error("Failed to refresh headlines", error);
+							new Notice("Failed to refresh headlines. Check your API key and connection.");
+						} finally {
+							button.setDisabled(false);
+							button.setButtonText("Refresh");
+						}
 					});
 			});
 

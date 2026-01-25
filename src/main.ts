@@ -4,18 +4,46 @@ import { initTicker } from "./ticker";
 import { fetchCurrentsHeadlines } from "./newsapi";
 
 const VIEW_TYPE_MY_PANEL = "my-plugin-panel";
+interface HeadlineItem {
+  title: string;
+  url?: string;
+}
+
 const HEADLINE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // the cache lifetime is 24 hours
-const FALLBACK_HEADLINES = [
-  "Sample Headline 1: Please Add Your API Key",
-  "Sample Headline 2: To Fetch Live News",
-  "Sample Headline 3: And Actually Get News",
-  "Sample Headline 4: These Are Just Placeholder!",
+const FALLBACK_HEADLINES: HeadlineItem[] = [
+  { title: "Sample Headline 1: Please Add Your API Key" },
+  { title: "Sample Headline 2: To Fetch Live News" },
+  { title: "Sample Headline 3: And Actually Get News" },
+  { title: "Sample Headline 4: These Are Just Placeholder!" },
 ];
+
+const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
+  if (!item) {
+    return null;
+  }
+
+  if (typeof item === "string") {
+    const title = item.trim();
+    return title ? { title } : null;
+  }
+
+  if (typeof item === "object") {
+    const record = item as { title?: unknown; url?: unknown };
+    const title = typeof record.title === "string" ? record.title.trim() : "";
+    if (!title) {
+      return null;
+    }
+    const url = typeof record.url === "string" ? record.url.trim() : undefined;
+    return url ? { title, url } : { title };
+  }
+
+  return null;
+};
 
 interface HeadlinesCache {
   cacheKey: string;
   fetchedAt: number;
-  headlines: string[];
+  headlines: HeadlineItem[];
 }
 
 interface PluginData {
@@ -61,7 +89,18 @@ class MyPanelView extends ItemView {
     const headlines = await this.plugin.getHeadlines();
     list.empty();
     headlines.forEach((headline) => {
-      list.createEl("li", { text: headline });
+      const item = list.createEl("li", { cls: "headline-item" });
+      const trimmedUrl = headline.url?.trim();
+      if (trimmedUrl) {
+        item.createEl("a", {
+          text: headline.title,
+          href: trimmedUrl,
+          cls: "headline-link",
+          attr: { target: "_blank", rel: "noopener" },
+        });
+      } else {
+        item.setText(headline.title);
+      }
     });
   }
 
@@ -231,10 +270,10 @@ export default class MyPlugin extends Plugin {
 		});
 	}
 
-	private async fetchHeadlinesFromApi(resolvedLimit: number): Promise<string[]> {
-		const apiKey = this.settings.currentsApiKey.trim();
-		if (!apiKey) {
-			return [];
+  private async fetchHeadlinesFromApi(resolvedLimit: number): Promise<HeadlineItem[]> {
+    const apiKey = this.settings.currentsApiKey.trim();
+    if (!apiKey) {
+      return [];
 		}
 
 		const category = this.settings.currentsCategory.trim();
@@ -250,12 +289,12 @@ export default class MyPlugin extends Plugin {
 			language: language.length > 0 ? language : undefined,
 		});
 
-		let titles = results
-			.map((item) => item.title)
-			.filter((title): title is string => Boolean(title && title.trim().length > 0));
+    const headlines = results
+      .map((item) => normalizeHeadlineItem({ title: item.title, url: item.url }))
+      .filter((item): item is HeadlineItem => Boolean(item));
 
-		return titles;
-	}
+    return headlines;
+  }
 
 	private async savePluginData() {
 		await this.saveData({
@@ -264,10 +303,12 @@ export default class MyPlugin extends Plugin {
 		});
 	}
 
-	async getHeadlines(options?: { forceRefresh?: boolean; showNotice?: boolean }) {
-		const resolvedLimit = Number.isFinite(this.settings.currentsLimit)
-			? Math.min(50, Math.max(1, Math.floor(this.settings.currentsLimit)))
-			: 3;
+  async getHeadlines(
+    options?: { forceRefresh?: boolean; showNotice?: boolean }
+  ): Promise<HeadlineItem[]> {
+    const resolvedLimit = Number.isFinite(this.settings.currentsLimit)
+      ? Math.min(50, Math.max(1, Math.floor(this.settings.currentsLimit)))
+      : 3;
 		const cacheKey = this.buildHeadlinesCacheKey(resolvedLimit);
 		const cache = this.headlinesCache;
 		const cacheMatches = cache?.cacheKey === cacheKey;
@@ -275,25 +316,34 @@ export default class MyPlugin extends Plugin {
 		const cacheFresh = cacheMatches && cacheAge < HEADLINE_CACHE_TTL_MS;
 		const forceRefresh = options?.forceRefresh ?? false;
 		const showNotice = options?.showNotice ?? true;
-		if (!forceRefresh && cacheFresh && cache?.headlines.length) {
-			return cache.headlines.slice(0, resolvedLimit);
+    const cacheHasUrls = Boolean(
+      cache?.headlines?.some(
+        (headline) => headline.url && headline.url.trim().length > 0
+      )
+    );
+    const cacheUsable =
+      cacheFresh &&
+      Boolean(cache?.headlines.length) &&
+      (cacheHasUrls || !this.settings.currentsApiKey.trim());
+    if (!forceRefresh && cacheUsable && cache?.headlines.length) {
+      return cache.headlines.slice(0, resolvedLimit);
+    }
+
+    if (!this.settings.currentsApiKey.trim()) {
+      return FALLBACK_HEADLINES.slice(0, resolvedLimit);
 		}
 
-		if (!this.settings.currentsApiKey.trim()) {
-			return FALLBACK_HEADLINES.slice(0, resolvedLimit);
-		}
-
-		try {
-			const titles = await this.fetchHeadlinesFromApi(resolvedLimit);
-			if (titles.length > 0) {
-				this.headlinesCache = {
-					cacheKey,
-					fetchedAt: Date.now(),
-					headlines: titles,
-				};
-				await this.savePluginData();
-				return titles.slice(0, resolvedLimit);
-			}
+    try {
+      const headlines = await this.fetchHeadlinesFromApi(resolvedLimit);
+      if (headlines.length > 0) {
+        this.headlinesCache = {
+          cacheKey,
+          fetchedAt: Date.now(),
+          headlines,
+        };
+        await this.savePluginData();
+        return headlines.slice(0, resolvedLimit);
+      }
 		} catch (error) {
 			console.error("Failed to fetch Currents headlines", error);
 			if (showNotice) {
@@ -353,6 +403,17 @@ export default class MyPlugin extends Plugin {
 			const typedData = data as PluginData;
 			this.settings = Object.assign({}, DEFAULT_SETTINGS, typedData.settings ?? {});
 			this.headlinesCache = typedData.headlinesCache ?? null;
+      if (this.headlinesCache && Array.isArray(this.headlinesCache.headlines)) {
+        const normalized = this.headlinesCache.headlines
+          .map((item) => normalizeHeadlineItem(item))
+          .filter((item): item is HeadlineItem => Boolean(item));
+        const { cacheKey, fetchedAt } = this.headlinesCache;
+        this.headlinesCache = {
+          cacheKey,
+          fetchedAt,
+          headlines: normalized,
+        };
+      }
 			return;
 		}
 
