@@ -144,7 +144,7 @@ const CURRENTS_LANGUAGES: Array<[string, string]> = [
 	["es", "Spanish"],
 	["th", "Thai"],
 	["tr", "Turkish"],
-	["vi", "Vietnamise"],
+	["vi", "Vietnamese"],
 ];
 
 export class SampleSettingTab extends PluginSettingTab {
@@ -178,19 +178,22 @@ export class SampleSettingTab extends PluginSettingTab {
 				}));
 		
 		containerEl.createEl('div', {text: 'News Settings', cls: 'setting-item-name setting-section-header'});
+		const descNewsSettings = createFragment();
+		descNewsSettings.appendText('Settings for the news ticker. The news are fetched from the ');
+		descNewsSettings.appendChild(createEl('a', {text: 'Currents News API', href: 'https://currentsapi.services/'}));
+		descNewsSettings.appendText('. Beware the amount of headlines displayed depends on the available headlines. For example, if you set the limit to 10 but only 5 headlines are available for your specified settings, only 5 will be shown.');
 		containerEl.createEl('div', {
-			text: 'These settings are for the news ticker. The news are fetched from the Currents News API. Beware the amount of headlines displayed depends on the available headlines. For example, if you set the limit to 10 but only 5 headlines are available for your specified settings, only 5 will be shown.',
 			cls: 'setting-item-description setting-section-description'
-		});
+		}).appendChild(descNewsSettings);
 
-		const descApi = createFragment();
-		descApi.appendText('Used to fetch live headlines, without it you will only see placeholder headlines. Get the free Currents API key making an account ');
-		descApi.appendChild(createEl('a', {text: 'here', href: 'https://currentsapi.services/'}));
-		descApi.appendText('.');
+		const descCurrentsKey = createFragment();
+		descCurrentsKey.appendText('Used to fetch live headlines, without it you will only see placeholder headlines. Get the free Currents API key by creating an account ');
+		descCurrentsKey.appendChild(createEl('a', {text: 'here', href: 'https://currentsapi.services/en/register'}));
+		descCurrentsKey.appendText('.');
 		
 		new Setting(containerEl)
 			.setName('Currents API key')
-			.setDesc(descApi)
+			.setDesc(descCurrentsKey)
 			.addText(text => text
 				.setPlaceholder('Enter your Currents API key')
 				.setValue(this.plugin.settings.currentsApiKey)
@@ -304,13 +307,16 @@ export class SampleSettingTab extends PluginSettingTab {
 			});
 
 		containerEl.createEl('div', {text: 'Stock Settings', cls: 'setting-item-name setting-section-header'});
+		const descStockSettings = createFragment();
+		descStockSettings.appendText('Settings for the stock ticker. The stocks are fetched from the ');
+		descStockSettings.appendChild(createEl('a', {text: 'Alpaca Market Data API', href: 'https://docs.alpaca.markets/'}));
+		descStockSettings.appendText('.');
 		containerEl.createEl('div', {
-			text: 'These settings are for the stock ticker. The stocks are fetched from the Alpaca Market Data API.',
 			cls: 'setting-item-description setting-section-description'
-		});
+		}).appendChild(descStockSettings);
 
 		const descAlpacaKey = createFragment();
-		descAlpacaKey.appendText('Used to fetch stock data. without it you will only see placeholder stock data. Get the free Alpaca API key making an account ');
+		descAlpacaKey.appendText('Used to fetch stock data. without it you will only see placeholder stock data. Get the free Alpaca API key by creating an account ');
 		descAlpacaKey.appendChild(createEl('a', {text: 'here', href: 'https://app.alpaca.markets/account/login?ref=alpaca.markets'}));
 		descAlpacaKey.appendText('.');
 
@@ -341,7 +347,7 @@ export class SampleSettingTab extends PluginSettingTab {
 		
 		const descDataUrl = createFragment();
 		descDataUrl.appendText('Defaults to ');
-		descDataUrl.appendChild(createEl('a', {text: 'https://data.alpaca.markets/v2', href: 'https://data.alpaca.markets/v2'}));
+		descDataUrl.appendChild(createEl('code', {text: 'https://data.alpaca.markets/v2'}));
 		descDataUrl.appendText('. Change this only if you are using a different Alpaca data provider.');
 
 		new Setting(containerEl)

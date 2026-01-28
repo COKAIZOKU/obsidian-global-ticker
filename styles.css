@@ -98,12 +98,12 @@
 .setting-section-header {
   font-weight: 600;
   margin-top: 1.5rem;
-  padding-left: var(--size-4-4);
-  padding-right: var(--size-4-4);
+  padding-left: var(--size-2-2);
+  padding-right: var(--size-2-2);
 }
 
 .setting-section-description {
   margin-bottom: 1.5rem;
-  padding-left: var(--size-4-4);
-  padding-right: var(--size-4-4); 
+  padding-left: var(--size-2-2);
+  padding-right: var(--size-2-2); 
 }
