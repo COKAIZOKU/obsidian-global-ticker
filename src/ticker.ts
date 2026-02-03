@@ -47,8 +47,33 @@ export function initTicker(root: ParentNode = document): void {
       appendClones(baseItems);
     };
 
-    requestAnimationFrame(ensureSeamlessLoop);
+    const applyDuration = () => {
+      const distance = scrollerInner.scrollWidth / 2;
+      if (!distance || !Number.isFinite(distance)) {
+        return;
+      }
+      const speedKey = scroller.dataset.speed ?? "medium";
+      const speedPxPerSec =
+        speedKey === "fast" ? 160 : speedKey === "slow" ? 60 : 100;
+      const duration = distance / speedPxPerSec;
+      scroller.style.setProperty("--_animation-duration", `${duration}s`);
+    };
+
+    requestAnimationFrame(() => {
+      ensureSeamlessLoop();
+      applyDuration();
+    });
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => {
+        applyDuration();
+      });
+      observer.observe(scrollerInner);
+      observer.observe(scroller);
+    } else {
+      window.addEventListener("resize", applyDuration, { passive: true });
+    }
   });
 }
 
-// From https://codepen.io/kevinpowell/pen/BavVLra
+// From https://codepen.io/kevinpowell/pen/BavVLra, the animation speed logic was changed though 
