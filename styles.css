@@ -31,15 +31,19 @@
 }
 
 .scroller[data-speed="fast"] {
-  --_animation-duration: 20s;
-}
-
-.scroller[data-speed="medium"] {
   --_animation-duration: 40s;
 }
 
-.scroller[data-speed="slow"] {
+.scroller[data-speed="medium"] {
   --_animation-duration: 60s;
+}
+
+.scroller[data-speed="slow"] {
+  --_animation-duration: 80s;
+}
+
+.scroller[data-speed="very-slow"] {
+  --_animation-duration: 100s;
 }
 
 @keyframes scroll {

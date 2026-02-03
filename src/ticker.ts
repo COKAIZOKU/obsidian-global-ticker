@@ -1,4 +1,28 @@
 // https://codepen.io/kevinpowell/pen/BavVLra
+export function applyTickerSpeed(scroller: HTMLElement): void {
+  const scrollerInner = scroller.querySelector<HTMLElement>(".scroller__inner");
+  if (!scrollerInner) {
+    return;
+  }
+
+  const distance = scrollerInner.scrollWidth / 2;
+  if (!distance || !Number.isFinite(distance)) {
+    return;
+  }
+
+  const speedKey = scroller.dataset.speed ?? "medium";
+  const speedPxPerSec =
+    speedKey === "fast"
+      ? 160
+      : speedKey === "slow"
+        ? 60
+        : speedKey === "very-slow"
+          ? 40
+          : 100;
+  const duration = distance / speedPxPerSec;
+  scroller.style.setProperty("--_animation-duration", `${duration}s`);
+}
+
 export function initTicker(root: ParentNode = document): void {
   // If a user hasn't opted in for reduced motion, then we add the animation.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -47,31 +71,21 @@ export function initTicker(root: ParentNode = document): void {
       appendClones(baseItems);
     };
 
-    const applyDuration = () => {
-      const distance = scrollerInner.scrollWidth / 2;
-      if (!distance || !Number.isFinite(distance)) {
-        return;
-      }
-      const speedKey = scroller.dataset.speed ?? "medium";
-      const speedPxPerSec =
-        speedKey === "fast" ? 160 : speedKey === "slow" ? 60 : 100;
-      const duration = distance / speedPxPerSec;
-      scroller.style.setProperty("--_animation-duration", `${duration}s`);
-    };
-
     requestAnimationFrame(() => {
       ensureSeamlessLoop();
-      applyDuration();
+      applyTickerSpeed(scroller);
     });
 
     if (typeof ResizeObserver !== "undefined") {
       const observer = new ResizeObserver(() => {
-        applyDuration();
+        applyTickerSpeed(scroller);
       });
       observer.observe(scrollerInner);
       observer.observe(scroller);
     } else {
-      window.addEventListener("resize", applyDuration, { passive: true });
+      window.addEventListener("resize", () => applyTickerSpeed(scroller), {
+        passive: true,
+      });
     }
   });
 }

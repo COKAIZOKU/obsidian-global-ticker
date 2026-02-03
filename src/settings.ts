@@ -1,11 +1,16 @@
 import {App, Notice, PluginSettingTab, Setting} from "obsidian";
 import MyPlugin from "./main";
 
-export type TickerSpeed = "fast" | "slow" | "medium";
+export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
+export type TickerDirection = "left" | "right";
 
 export interface MyPluginSettings {
 	mySetting: string;
-	tickerSpeed: TickerSpeed;
+	newsTickerSpeed: TickerSpeed;
+	stockTickerSpeed: TickerSpeed;
+	newsTickerDirection: TickerDirection;
+	stockTickerDirection: TickerDirection;
+	tickerSpeed?: TickerSpeed;
 	stockChangeColor: string;
 	stockPriceColor: string;
 	alpacaApiKey: string;
@@ -22,7 +27,10 @@ export interface MyPluginSettings {
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default',
-	tickerSpeed: "slow",
+	newsTickerSpeed: "slow",
+	stockTickerSpeed: "slow",
+	newsTickerDirection: "left",
+	stockTickerDirection: "left",
 	stockChangeColor: "",
 	stockPriceColor: "",
 	alpacaApiKey: "",
@@ -160,23 +168,6 @@ export class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		new Setting(containerEl)
-			.setName('Ticker speed')
-			.setDesc('Choose how fast the ticker scrolls. The speed depends on the element width, the longer the width, the faster it looks.')
-			.addDropdown(dropdown => dropdown
-				.addOption("slow", "Slow")
-				.addOption("medium", "Medium")
-				.addOption("fast", "Fast")
-				.setValue(this.plugin.settings.tickerSpeed)
-				.onChange(async (value) => {
-					if (value !== "slow" && value !== "fast" && value !== "medium") {
-						return;
-					}
-					this.plugin.settings.tickerSpeed = value;
-					await this.plugin.saveSettings();
-					this.plugin.updateTickerSpeed();
-				}));
-		
 		containerEl.createEl('div', {text: 'News Settings', cls: 'setting-item-name setting-section-header'});
 		const descNewsSettings = createFragment();
 		descNewsSettings.appendText('Settings for the news ticker. The news are fetched from the ');
@@ -185,6 +176,45 @@ export class SampleSettingTab extends PluginSettingTab {
 		containerEl.createEl('div', {
 			cls: 'setting-item-description setting-section-description'
 		}).appendChild(descNewsSettings);
+
+		new Setting(containerEl)
+			.setName('News ticker speed')
+			.setDesc('Choose how fast the news ticker scrolls.')
+			.addDropdown(dropdown => dropdown
+				.addOption("very-slow", "Very Slow")
+				.addOption("slow", "Slow")
+				.addOption("medium", "Medium")
+				.addOption("fast", "Fast")
+				.setValue(this.plugin.settings.newsTickerSpeed)
+				.onChange(async (value) => {
+					if (
+						value !== "very-slow" &&
+						value !== "slow" &&
+						value !== "fast" &&
+						value !== "medium"
+					) {
+						return;
+					}
+					this.plugin.settings.newsTickerSpeed = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('News ticker direction')
+			.setDesc('Choose the scrolling direction for the news ticker.')
+			.addDropdown(dropdown => dropdown
+				.addOption("left", "Left")
+				.addOption("right", "Right")
+				.setValue(this.plugin.settings.newsTickerDirection)
+				.onChange(async (value) => {
+					if (value !== "left" && value !== "right") {
+						return;
+					}
+					this.plugin.settings.newsTickerDirection = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}));
 
 		const descCurrentsKey = createFragment();
 		descCurrentsKey.appendText('Used to fetch live headlines, without it you will only see placeholder headlines. Get the free Currents API key by creating an account ');
@@ -314,6 +344,45 @@ export class SampleSettingTab extends PluginSettingTab {
 		containerEl.createEl('div', {
 			cls: 'setting-item-description setting-section-description'
 		}).appendChild(descStockSettings);
+
+		new Setting(containerEl)
+			.setName('Stock ticker speed')
+			.setDesc('Choose how fast the stock ticker scrolls.')
+			.addDropdown(dropdown => dropdown
+				.addOption("very-slow", "Very Slow")
+				.addOption("slow", "Slow")
+				.addOption("medium", "Medium")
+				.addOption("fast", "Fast")
+				.setValue(this.plugin.settings.stockTickerSpeed)
+				.onChange(async (value) => {
+					if (
+						value !== "very-slow" &&
+						value !== "slow" &&
+						value !== "fast" &&
+						value !== "medium"
+					) {
+						return;
+					}
+					this.plugin.settings.stockTickerSpeed = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Stock ticker direction')
+			.setDesc('Choose the scrolling direction for the stock ticker.')
+			.addDropdown(dropdown => dropdown
+				.addOption("left", "Left")
+				.addOption("right", "Right")
+				.setValue(this.plugin.settings.stockTickerDirection)
+				.onChange(async (value) => {
+					if (value !== "left" && value !== "right") {
+						return;
+					}
+					this.plugin.settings.stockTickerDirection = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}));
 
 		const descAlpacaKey = createFragment();
 		descAlpacaKey.appendText('Used to fetch stock data. without it you will only see placeholder stock data. Get the free Alpaca API key by creating an account ');

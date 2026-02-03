@@ -1,6 +1,6 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin, ItemView, WorkspaceLeaf} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab, TickerSpeed} from "./settings";
-import { initTicker } from "./ticker";
+import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab, TickerDirection, TickerSpeed} from "./settings";
+import { applyTickerSpeed, initTicker } from "./ticker";
 import { fetchCurrentsHeadlines } from "./api/news";
 import { fetchAlpacaStockQuotes, normalizeStockSymbols, StockQuote } from "./api/stocks";
 
@@ -107,36 +107,80 @@ interface PluginData {
 
 class MyPanelView extends ItemView {
   private plugin: MyPlugin;
-  private speed: TickerSpeed;
+  private newsSpeed: TickerSpeed;
+  private stockSpeed: TickerSpeed;
+  private newsDirection: TickerDirection;
+  private stockDirection: TickerDirection;
   private stockChangeColor: string;
   private stockPriceColor: string;
 
   constructor(
     leaf: WorkspaceLeaf,
     plugin: MyPlugin,
-    speed: TickerSpeed,
+    newsSpeed: TickerSpeed,
+    stockSpeed: TickerSpeed,
+    newsDirection: TickerDirection,
+    stockDirection: TickerDirection,
     stockPriceColor: string,
     stockChangeColor: string
   ) {
     super(leaf);
     this.plugin = plugin;
-    this.speed = speed;
+    this.newsSpeed = newsSpeed;
+    this.stockSpeed = stockSpeed;
+    this.newsDirection = newsDirection;
+    this.stockDirection = stockDirection;
     this.stockPriceColor = stockPriceColor;
     this.stockChangeColor = stockChangeColor;
   }
 
-  setSpeed(speed: TickerSpeed) {
-    this.speed = speed;
-    const scrollers = this.containerEl.querySelectorAll<HTMLElement>(".scroller");
-    scrollers.forEach((scroller) => {
-      scroller.setAttribute("data-speed", speed);
-    });
+  setTickerSettings(
+    newsSpeed: TickerSpeed,
+    stockSpeed: TickerSpeed,
+    newsDirection: TickerDirection,
+    stockDirection: TickerDirection
+  ) {
+    this.newsSpeed = newsSpeed;
+    this.stockSpeed = stockSpeed;
+    this.newsDirection = newsDirection;
+    this.stockDirection = stockDirection;
+    this.applyTickerSettings();
   }
 
   setStockColors(stockPriceColor: string, stockChangeColor: string) {
     this.stockPriceColor = stockPriceColor;
     this.stockChangeColor = stockChangeColor;
     this.applyColorVars();
+  }
+
+  private applyTickerSettings() {
+    const newsScroller = this.containerEl.querySelector<HTMLElement>(
+      '.scroller[data-ticker="news"]'
+    );
+    if (newsScroller) {
+      this.applyScrollerSettings(newsScroller, this.newsSpeed, this.newsDirection);
+    }
+
+    const stockScroller = this.containerEl.querySelector<HTMLElement>(
+      '.scroller[data-ticker="stock"]'
+    );
+    if (stockScroller) {
+      this.applyScrollerSettings(
+        stockScroller,
+        this.stockSpeed,
+        this.stockDirection
+      );
+    }
+  }
+
+  private applyScrollerSettings(
+    scroller: HTMLElement,
+    speed: TickerSpeed,
+    direction: TickerDirection
+  ) {
+    scroller.setAttribute("data-speed", speed);
+    scroller.setAttribute("data-direction", direction);
+    applyTickerSpeed(scroller);
   }
 
   private async loadHeadlines(list: HTMLUListElement) {
@@ -188,13 +232,17 @@ class MyPanelView extends ItemView {
     const container = this.containerEl; // main content area
     container.empty();
     const scroller = container.createDiv({ cls: "scroller" });
-    scroller.setAttribute("data-speed", this.speed);
+    scroller.setAttribute("data-ticker", "news");
+    scroller.setAttribute("data-speed", this.newsSpeed);
+    scroller.setAttribute("data-direction", this.newsDirection);
 
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
     await this.loadHeadlines(list);
 
     const stockScroller = container.createDiv({ cls: "scroller" });
-    stockScroller.setAttribute("data-speed", this.speed);
+    stockScroller.setAttribute("data-ticker", "stock");
+    stockScroller.setAttribute("data-speed", this.stockSpeed);
+    stockScroller.setAttribute("data-direction", this.stockDirection);
 
     const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner", "stock-list"] });
     const quotes = await this.plugin.getStockQuotes();
@@ -250,7 +298,10 @@ export default class MyPlugin extends Plugin {
 				new MyPanelView(
 					leaf,
 					this,
-					this.settings.tickerSpeed,
+					this.settings.newsTickerSpeed,
+					this.settings.stockTickerSpeed,
+					this.settings.newsTickerDirection,
+					this.settings.stockTickerDirection,
 					this.settings.stockPriceColor,
 					this.settings.stockChangeColor
 				)
@@ -288,7 +339,10 @@ export default class MyPlugin extends Plugin {
 						new MyPanelView(
 							this.app.workspace.getLeaf(true),
 							this,
-							this.settings.tickerSpeed,
+							this.settings.newsTickerSpeed,
+							this.settings.stockTickerSpeed,
+							this.settings.newsTickerDirection,
+							this.settings.stockTickerDirection,
 							this.settings.stockPriceColor,
 							this.settings.stockChangeColor
 						);
@@ -551,12 +605,17 @@ export default class MyPlugin extends Plugin {
 		);
 	}
 
-	updateTickerSpeed() {
+	updateTickerSettings() {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		leaves.forEach((leaf) => {
 			const view = leaf.view;
 			if (view instanceof MyPanelView) {
-				view.setSpeed(this.settings.tickerSpeed);
+				view.setTickerSettings(
+					this.settings.newsTickerSpeed,
+					this.settings.stockTickerSpeed,
+					this.settings.newsTickerDirection,
+					this.settings.stockTickerDirection
+				);
 			}
 		});
 	}
@@ -578,7 +637,19 @@ export default class MyPlugin extends Plugin {
 		const data = await this.loadData();
 		if (data && typeof data === "object" && "settings" in data) {
 			const typedData = data as PluginData;
-			this.settings = Object.assign({}, DEFAULT_SETTINGS, typedData.settings ?? {});
+			const mergedSettings = Object.assign(
+				{},
+				DEFAULT_SETTINGS,
+				typedData.settings ?? {}
+			);
+			const legacyTickerSpeed = typedData.settings?.tickerSpeed;
+			if (!typedData.settings?.newsTickerSpeed && legacyTickerSpeed) {
+				mergedSettings.newsTickerSpeed = legacyTickerSpeed;
+			}
+			if (!typedData.settings?.stockTickerSpeed && legacyTickerSpeed) {
+				mergedSettings.stockTickerSpeed = legacyTickerSpeed;
+			}
+			this.settings = mergedSettings;
 			this.headlinesCache = typedData.headlinesCache ?? null;
       if (this.headlinesCache && Array.isArray(this.headlinesCache.headlines)) {
         const normalized = this.headlinesCache.headlines
@@ -594,7 +665,16 @@ export default class MyPlugin extends Plugin {
 			return;
 		}
 
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data as Partial<MyPluginSettings>);
+		const rawSettings = data as Partial<MyPluginSettings>;
+		const mergedSettings = Object.assign({}, DEFAULT_SETTINGS, rawSettings);
+		const legacyTickerSpeed = rawSettings?.tickerSpeed;
+		if (!rawSettings?.newsTickerSpeed && legacyTickerSpeed) {
+			mergedSettings.newsTickerSpeed = legacyTickerSpeed;
+		}
+		if (!rawSettings?.stockTickerSpeed && legacyTickerSpeed) {
+			mergedSettings.stockTickerSpeed = legacyTickerSpeed;
+		}
+		this.settings = mergedSettings;
 		this.headlinesCache = null;
 	}
 
