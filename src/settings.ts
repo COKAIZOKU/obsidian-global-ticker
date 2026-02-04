@@ -432,7 +432,9 @@ export class SampleSettingTab extends PluginSettingTab {
 		const descDataUrl = createFragment();
 		descDataUrl.appendText('Defaults to ');
 		descDataUrl.appendChild(createEl('code', {text: 'https://data.alpaca.markets/v2'}));
-		descDataUrl.appendText('. Change this only if you are using a different Alpaca data provider.');
+		descDataUrl.appendText('. Change this only if you are using a different Alpaca data provider. Only ');
+		descDataUrl.appendChild(createEl('code', {text: 'https://'}));;
+		descDataUrl.appendText(' URLs are allowed for security reasons.');
 
 		new Setting(containerEl)
 			.setName('Data base URL')
