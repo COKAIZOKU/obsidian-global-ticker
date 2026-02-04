@@ -441,7 +441,13 @@ export class SampleSettingTab extends PluginSettingTab {
 				.setPlaceholder('https://data.alpaca.markets/v2')
 				.setValue(this.plugin.settings.alpacaDataBaseUrl)
 				.onChange(async (value) => {
-					this.plugin.settings.alpacaDataBaseUrl = value.trim();
+					const trimmed = value.trim();
+					if (/^http:\/\//i.test(trimmed)) {
+						new Notice("Please use https:// for the Alpaca data base URL.");
+						text.setValue(this.plugin.settings.alpacaDataBaseUrl);
+						return;
+					}
+					this.plugin.settings.alpacaDataBaseUrl = trimmed;
 					await this.plugin.saveSettings();
 				}));
 

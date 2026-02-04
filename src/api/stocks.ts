@@ -73,6 +73,9 @@ export const normalizeStockSymbols = (input: string): string[] => {
 
 const normalizeBaseUrl = (input?: string): string => {
   const trimmed = (input ?? "").trim();
+  if (/^http:\/\//i.test(trimmed)) {
+    throw new Error("Alpaca base URL must use https.");
+  }
   const base = trimmed.length > 0 ? trimmed : ALPACA_DATA_BASE_URL;
   return base.replace(/\/+$/, "");
 };
