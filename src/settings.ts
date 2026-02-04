@@ -351,7 +351,7 @@ export class SampleSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl('div', {text: 'Stocks Settings', cls: 'setting-item-name setting-section-header'});
+		containerEl.createEl('div', {text: 'Stocks Settings', cls: 'setting-item-name setting-section-header margin-top'});
 		const descStockSettings = createFragment();
 		descStockSettings.appendText('Settings for the stocks ticker. The stocks are fetched from the ');
 		descStockSettings.appendChild(createEl('a', {text: 'Alpaca Market Data API', href: 'https://docs.alpaca.markets/'}));
