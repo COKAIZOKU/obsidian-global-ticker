@@ -42,22 +42,6 @@
   --_animation-direction: forwards;
 }
 
-.scroller[data-speed="fast"] {
-  --_animation-duration: 40s;
-}
-
-.scroller[data-speed="medium"] {
-  --_animation-duration: 60s;
-}
-
-.scroller[data-speed="slow"] {
-  --_animation-duration: 80s;
-}
-
-.scroller[data-speed="very-slow"] {
-  --_animation-duration: 100s;
-}
-
 @keyframes scroll {
   to {
     transform: translate(calc(-1 * var(--_loop-distance, 50%)));
@@ -117,13 +101,11 @@
 
 .setting-section-header {
   font-weight: 600;
-  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
   padding-left: var(--size-4-4);
   padding-right: var(--size-4-4);
 }
 
-.setting-section-description {
-  margin-bottom: 1.5rem;
-  padding-left: var(--size-4-4);
-  padding-right: var(--size-4-4);
+.setting-section-header-margin-top {
+  margin-top: 1.5rem;
 }

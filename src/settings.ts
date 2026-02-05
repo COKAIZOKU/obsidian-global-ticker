@@ -1,4 +1,4 @@
-import {App, Notice, PluginSettingTab, Setting} from "obsidian";
+import {App, Notice, PluginSettingTab, Setting, SettingTab} from "obsidian";
 import GlobalTicker from "./main";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
@@ -169,56 +169,10 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl('div', {text: 'News Settings', cls: 'setting-item-name setting-section-header'});
-		const descNewsSettings = createFragment();
-		descNewsSettings.appendText('Settings for the news ticker. The news are fetched from the ');
-		descNewsSettings.appendChild(createEl('a', {text: 'Currents News API', href: 'https://currentsapi.services/'}));
-		descNewsSettings.appendText('. Beware the amount of headlines displayed depends on the available headlines. For example, if you set the limit to 10 but only 5 headlines are available for your specified settings, only 5 will be shown.');
-		containerEl.createEl('div', {
-			cls: 'setting-item-description setting-section-description'
-		}).appendChild(descNewsSettings);
-
-		new Setting(containerEl)
-			.setName('News ticker speed')
-			.setDesc('Choose how fast the news ticker scrolls.')
-			.addDropdown(dropdown => dropdown
-				.addOption("very-slow", "Very Slow")
-				.addOption("slow", "Slow")
-				.addOption("medium", "Medium")
-				.addOption("fast", "Fast")
-				.setValue(this.plugin.settings.newsTickerSpeed)
-				.onChange(async (value) => {
-					if (
-						value !== "very-slow" &&
-						value !== "slow" &&
-						value !== "fast" &&
-						value !== "medium"
-					) {
-						return;
-					}
-					this.plugin.settings.newsTickerSpeed = value;
-					await this.plugin.saveSettings();
-					this.plugin.updateTickerSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('News ticker direction')
-			.setDesc('Choose the scrolling direction for the news ticker.')
-			.addDropdown(dropdown => dropdown
-				.addOption("left", "Left")
-				.addOption("right", "Right")
-				.setValue(this.plugin.settings.newsTickerDirection)
-				.onChange(async (value) => {
-					if (value !== "left" && value !== "right") {
-						return;
-					}
-					this.plugin.settings.newsTickerDirection = value;
-					await this.plugin.saveSettings();
-					this.plugin.updateTickerSettings();
-				}));
 
 		const descCurrentsKey = createFragment();
 		descCurrentsKey.appendText('Used to fetch live headlines, without it you will only see placeholder headlines. Get the free Currents API key by creating an account ');
-		descCurrentsKey.appendChild(createEl('a', {text: 'here', href: 'https://currentsapi.services/en/register'}));
+		descCurrentsKey.appendChild(createEl('a', {text: 'here', href: 'https://currentsapi.services/'}));
 		descCurrentsKey.appendText('.');
 		
 		new Setting(containerEl)
@@ -250,7 +204,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 		const descDomains = createFragment();
 		descDomains.appendText('Filter headlines by source domains. To see if a domain is supported, search for it ');
 		descDomains.appendChild(createEl('a', {text: 'here', href: 'https://www.currentsapi.services/en/statistic/'}));
-		descDomains.appendText('.');
+		descDomains.appendText('. ');
 
 		new Setting(containerEl)
 			.setName('Domains')
@@ -306,7 +260,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Headline limit')
-			.setDesc('Number of headlines to fetch. The limit is 10 with the free API key.')
+			.setDesc('Number of headlines to fetch. The limit is 10 with the free API key. Beware the amount of headlines displayed depends on the available headlines. For example, if you set the limit to 10 but only 5 headlines are available for your specified settings, only 5 will be shown.')
 			.addText(text => {
 				text.inputEl.type = "number";
 				text
@@ -323,6 +277,43 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+
+		const settingNewsDirectionSpeed = new Setting(containerEl)
+		.setName("News ticker speed and direction")
+		.setDesc("Choose how fast the news ticker scrolls and its direction.");
+
+		settingNewsDirectionSpeed
+			.addDropdown(dropdown => dropdown
+				.addOption("very-slow", "Very Slow")
+				.addOption("slow", "Slow")
+				.addOption("medium", "Medium")
+				.addOption("fast", "Fast")
+				.setValue(this.plugin.settings.newsTickerSpeed)
+				.onChange(async (value) => {
+					if (
+						value !== "very-slow" &&
+						value !== "slow" &&
+						value !== "fast" &&
+						value !== "medium"
+					) {
+						return;
+					}
+					this.plugin.settings.newsTickerSpeed = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}))
+		.addDropdown(dropdown => dropdown
+				.addOption("left", "Left")
+				.addOption("right", "Right")
+				.setValue(this.plugin.settings.newsTickerDirection)
+				.onChange(async (value) => {
+					if (value !== "left" && value !== "right") {
+						return;
+					}
+					this.plugin.settings.newsTickerDirection = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}));
 
 		new Setting(containerEl)
 			.setName('Refresh headlines')
@@ -347,53 +338,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl('div', {text: 'Stocks Settings', cls: 'setting-item-name setting-section-header margin-top'});
-		const descStockSettings = createFragment();
-		descStockSettings.appendText('Settings for the stocks ticker. The stocks are fetched from the ');
-		descStockSettings.appendChild(createEl('a', {text: 'Finnhub Stock API', href: 'https://finnhub.io/docs/api'}));
-		descStockSettings.appendText('.');
-		containerEl.createEl('div', {
-			cls: 'setting-item-description setting-section-description'
-		}).appendChild(descStockSettings);
-
-		new Setting(containerEl)
-			.setName('Stocks ticker speed')
-			.setDesc('Choose how fast the stocks ticker scrolls.')
-			.addDropdown(dropdown => dropdown
-				.addOption("very-slow", "Very Slow")
-				.addOption("slow", "Slow")
-				.addOption("medium", "Medium")
-				.addOption("fast", "Fast")
-				.setValue(this.plugin.settings.stockTickerSpeed)
-				.onChange(async (value) => {
-					if (
-						value !== "very-slow" &&
-						value !== "slow" &&
-						value !== "fast" &&
-						value !== "medium"
-					) {
-						return;
-					}
-					this.plugin.settings.stockTickerSpeed = value;
-					await this.plugin.saveSettings();
-					this.plugin.updateTickerSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Stocks ticker direction')
-			.setDesc('Choose the scrolling direction for the stocks ticker.')
-			.addDropdown(dropdown => dropdown
-				.addOption("left", "Left")
-				.addOption("right", "Right")
-				.setValue(this.plugin.settings.stockTickerDirection)
-				.onChange(async (value) => {
-					if (value !== "left" && value !== "right") {
-						return;
-					}
-					this.plugin.settings.stockTickerDirection = value;
-					await this.plugin.saveSettings();
-					this.plugin.updateTickerSettings();
-				}));
+		containerEl.createEl('div', {text: 'Stocks Settings', cls: 'setting-item-name setting-section-header setting-section-header-margin-top'});
 
 		const descFinnhubKey = createFragment();
 		descFinnhubKey.appendText('Used to fetch stocks data. without it you will only see placeholder stocks data. Get the free Finnhub API key by creating an account ');
@@ -464,6 +409,43 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.updateTickerColors();
 				}));
+				const settingStockDirectionSpeed = new Setting(containerEl)
+		.setName("Stocks ticker speed and direction")
+		.setDesc("Choose how fast the stocks ticker scrolls and its direction.");
+
+		settingStockDirectionSpeed
+			.addDropdown(dropdown => dropdown
+				.addOption("very-slow", "Very Slow")
+				.addOption("slow", "Slow")
+				.addOption("medium", "Medium")
+				.addOption("fast", "Fast")
+				.setValue(this.plugin.settings.stockTickerSpeed)
+				.onChange(async (value) => {
+					if (
+						value !== "very-slow" &&
+						value !== "slow" &&
+						value !== "fast" &&
+						value !== "medium"
+					) {
+						return;
+					}
+					this.plugin.settings.stockTickerSpeed = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}))	
+		.addDropdown(dropdown => dropdown
+				.addOption("left", "Left")
+				.addOption("right", "Right")
+				.setValue(this.plugin.settings.stockTickerDirection)
+				.onChange(async (value) => {
+					if (value !== "left" && value !== "right") {
+						return;
+					}
+					this.plugin.settings.stockTickerDirection = value;
+					await this.plugin.saveSettings();
+					this.plugin.updateTickerSettings();
+				}));
+
 		
 		new Setting(containerEl)
 			.setName('Refresh stocks data')

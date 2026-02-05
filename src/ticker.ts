@@ -40,12 +40,12 @@ export function applyTickerSpeed(scroller: HTMLElement): void {
   const speedKey = scroller.dataset.speed ?? "medium";
   const speedPxPerSec =
     speedKey === "fast"
-      ? 160
+      ? 120
       : speedKey === "slow"
-        ? 60
+        ? 40
         : speedKey === "very-slow"
-          ? 40
-          : 100;
+          ? 20
+          : 80;
   const duration = distance / speedPxPerSec;
   scroller.style.setProperty("--_animation-duration", `${duration}s`);
 }
