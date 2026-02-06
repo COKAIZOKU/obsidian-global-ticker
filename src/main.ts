@@ -134,6 +134,8 @@ class MyPanelView extends ItemView {
   private stockChangeColor: string;
   private stockChangeNegativeColor: string;
   private stockPriceColor: string;
+  private newsSectionEl?: HTMLElement;
+  private stockSectionEl?: HTMLElement;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -260,10 +262,9 @@ class MyPanelView extends ItemView {
     return "News";
   }
 
-  private async render() {
-    const container = this.containerEl; // main content area
-    container.empty();
-    const scroller = container.createDiv({ cls: "scroller" });
+  private async renderNewsSection(section: HTMLElement) {
+    section.empty();
+    const scroller = section.createDiv({ cls: "scroller" });
     scroller.setAttribute("data-ticker", "news");
     scroller.setAttribute("data-speed", this.newsSpeed);
     scroller.setAttribute("data-direction", this.newsDirection);
@@ -271,8 +272,8 @@ class MyPanelView extends ItemView {
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
     await this.loadHeadlines(list);
 
-    container.createDiv({ cls: "ticker-divider" });
-    const newsFooter = container.createDiv({ cls: "ticker-footer" });
+    section.createDiv({ cls: "ticker-divider" });
+    const newsFooter = section.createDiv({ cls: "ticker-footer" });
     newsFooter.createSpan({
       cls: "ticker-refresh-time",
       text: formatLastRefreshed(this.plugin.getHeadlinesLastRefreshedAt()),
@@ -295,8 +296,12 @@ class MyPanelView extends ItemView {
       }
     });
 
-    container.createDiv({ cls: "ticker-divider" });
-    const stockScroller = container.createDiv({ cls: "scroller" });
+    section.createDiv({ cls: "ticker-divider" });
+  }
+
+  private async renderStocksSection(section: HTMLElement) {
+    section.empty();
+    const stockScroller = section.createDiv({ cls: "scroller" });
     stockScroller.setAttribute("data-ticker", "stock");
     stockScroller.setAttribute("data-speed", this.stockSpeed);
     stockScroller.setAttribute("data-direction", this.stockDirection);
@@ -319,8 +324,8 @@ class MyPanelView extends ItemView {
       }
     });
 
-    container.createDiv({ cls: "ticker-divider" });
-    const stockFooter = container.createDiv({ cls: "ticker-footer" });
+    section.createDiv({ cls: "ticker-divider" });
+    const stockFooter = section.createDiv({ cls: "ticker-footer" });
     stockFooter.createSpan({
       cls: "ticker-refresh-time",
       text: formatLastRefreshed(lastRefreshedAt),
@@ -342,7 +347,17 @@ class MyPanelView extends ItemView {
         refreshButton.disabled = false;
       }
     });
+
     this.applyColorVars();
+  }
+
+  private async render() {
+    const container = this.containerEl; // main content area
+    container.empty();
+    this.newsSectionEl = container.createDiv({ cls: "news-section" });
+    this.stockSectionEl = container.createDiv({ cls: "stock-section" });
+    await this.renderNewsSection(this.newsSectionEl);
+    await this.renderStocksSection(this.stockSectionEl);
     initTicker(container);
   }
 
@@ -352,6 +367,24 @@ class MyPanelView extends ItemView {
 
   async refresh() {
     await this.render();
+  }
+
+  async refreshHeadlines() {
+    if (!this.newsSectionEl) {
+      await this.render();
+      return;
+    }
+    await this.renderNewsSection(this.newsSectionEl);
+    initTicker(this.newsSectionEl);
+  }
+
+  async refreshStocks() {
+    if (!this.stockSectionEl) {
+      await this.render();
+      return;
+    }
+    await this.renderStocksSection(this.stockSectionEl);
+    initTicker(this.stockSectionEl);
   }
 
   async onClose() {
@@ -633,7 +666,7 @@ export default class GlobalTicker extends Plugin {
 			leaves.map(async (leaf) => {
 				const view = leaf.view;
 				if (view instanceof MyPanelView) {
-					await view.refresh();
+					await view.refreshHeadlines();
 				}
 			})
 		);
@@ -690,7 +723,7 @@ export default class GlobalTicker extends Plugin {
 			leaves.map(async (leaf) => {
 				const view = leaf.view;
 				if (view instanceof MyPanelView) {
-					await view.refresh();
+					await view.refreshStocks();
 				}
 			})
 		);
