@@ -15,6 +15,8 @@ const VIEW_TYPE_MY_PANEL = "my-plugin-panel";
 interface HeadlineItem {
   title: string;
   url?: string;
+  source?: string;
+  category?: string | string[];
 }
 
 const HEADLINE_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // the cache lifetime is 24 hours
@@ -73,17 +75,69 @@ const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
   }
 
   if (typeof item === "object") {
-    const record = item as { title?: unknown; url?: unknown };
+    const record = item as {
+      title?: unknown;
+      url?: unknown;
+      source?: unknown;
+      category?: unknown;
+    };
     const title = typeof record.title === "string" ? record.title.trim() : "";
     if (!title) {
       return null;
     }
     const url = typeof record.url === "string" ? record.url.trim() : undefined;
-    return url ? { title, url } : { title };
+    const source =
+      typeof record.source === "string" ? record.source.trim() : undefined;
+    const category = Array.isArray(record.category)
+      ? record.category
+          .map((value) => (typeof value === "string" ? value.trim() : ""))
+          .filter(Boolean)
+      : typeof record.category === "string"
+        ? record.category.trim()
+        : undefined;
+    return {
+      title,
+      ...(url ? { url } : {}),
+      ...(source ? { source } : {}),
+      ...(category && (Array.isArray(category) ? category.length > 0 : category)
+        ? { category }
+        : {}),
+    };
   }
 
   return null;
 };
+
+const getSourceLabel = (headline: HeadlineItem): string | null => {
+  const source = headline.source?.trim();
+  if (source) {
+    return source;
+  }
+  const url = headline.url?.trim();
+  if (!url) {
+    return null;
+  }
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, "");
+    return hostname || null;
+  } catch {
+    return null;
+  }
+};
+
+const getCategoryLabel = (headline: HeadlineItem): string | null => {
+  const { category } = headline;
+  if (!category) {
+    return null;
+  }
+  if (Array.isArray(category)) {
+    const first = category.find((value) => value.trim().length > 0);
+    return first ?? null;
+  }
+  const trimmed = category.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 
 const formatPrice = (value?: number): string =>
   value === undefined ? "N/A" : `$${value.toFixed(2)}`;
@@ -248,7 +302,20 @@ class MyPanelView extends ItemView {
           attr: { target: "_blank", rel: "noopener" },
         });
       } else {
-        item.setText(headline.title);
+        item.createSpan({ text: headline.title, cls: "headline-text" });
+      }
+      if (this.plugin.settings.showHeadlineMeta) {
+        const metaItems = [
+          getSourceLabel(headline),
+          getCategoryLabel(headline),
+        ].filter((value): value is string => Boolean(value));
+
+        if (metaItems.length > 0) {
+          const metaList = item.createEl("ul", { cls: "headline-meta" });
+          metaItems.forEach((meta) => {
+            metaList.createEl("li", { text: meta });
+          });
+        }
       }
     });
   }
@@ -634,6 +701,8 @@ export default class GlobalTicker extends Plugin {
 					const normalized = normalizeHeadlineItem({
 						title: item.title,
 						url: item.url,
+						source: item.source,
+						category: item.category,
 					});
 					if (!normalized) {
 						return;
@@ -660,7 +729,14 @@ export default class GlobalTicker extends Plugin {
 		});
 
 		const headlines = results
-			.map((item) => normalizeHeadlineItem({ title: item.title, url: item.url }))
+			.map((item) =>
+					normalizeHeadlineItem({
+						title: item.title,
+						url: item.url,
+						source: item.source,
+						category: item.category,
+					})
+			)
 			.filter((item): item is HeadlineItem => Boolean(item));
 
 		return headlines;
