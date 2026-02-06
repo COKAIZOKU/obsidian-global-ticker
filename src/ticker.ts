@@ -149,7 +149,7 @@ export function initTicker(root: ParentNode = document): void {
       }
       if (scrollerWidth > MAX_VIEWPORT_PX || copiesNeeded > maxCopies) {
         console.warn(
-          "[my-plugin] Ticker reached clone cap; consider reducing window width or list length.",
+          "Ticker reached clone cap; consider reducing window width or list length.",
           {
             scrollerWidth,
             maxViewport: MAX_VIEWPORT_PX,

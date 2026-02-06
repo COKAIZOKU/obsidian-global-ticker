@@ -99,6 +99,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ticker-divider {
+  height: 1px;
+  width: 100%;
+  background: var(--color-base-30);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.ticker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  padding: 0 1rem 0.75rem;
+}
+
+.ticker-refresh-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker-refresh-button {
+  --icon-size: 16px;
+  padding: 2px;
+}
+
+.ticker-refresh-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .setting-section-header {
   font-weight: 600;
   margin-bottom: 1.5rem;

@@ -143,7 +143,7 @@ export async function fetchFinnhubStockQuotes(
     if (result.status === "fulfilled") {
       return result.value;
     }
-    console.warn("[my-plugin] Failed to fetch Finnhub quote.", {
+    console.warn("Failed to fetch Finnhub quote.", {
       symbol,
       error: result.reason,
     });

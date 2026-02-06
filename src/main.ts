@@ -1,4 +1,4 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin, ItemView, WorkspaceLeaf} from 'obsidian';
+import {App, Editor, MarkdownView, Modal, Notice, Plugin, ItemView, WorkspaceLeaf, setIcon} from 'obsidian';
 import {DEFAULT_SETTINGS, GlobalTickerSettings, GlobalTickerSettingTab, TickerDirection, TickerSpeed} from "./settings";
 import { applyTickerSpeed, initTicker } from "./ticker";
 import { fetchCurrentsHeadlines } from "./api/news";
@@ -87,6 +87,13 @@ const formatChange = (value?: number): string => {
   }
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(2)}%`;
+};
+
+const formatLastRefreshed = (timestamp?: number | null): string => {
+  if (!timestamp) {
+    return "Last refreshed: ---";
+  }
+  return `Last refreshed: ${new Date(timestamp).toLocaleString()}`;
 };
 
 const toStockDisplayItem = (quote: StockQuote): {
@@ -264,6 +271,31 @@ class MyPanelView extends ItemView {
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
     await this.loadHeadlines(list);
 
+    container.createDiv({ cls: "ticker-divider" });
+    const newsFooter = container.createDiv({ cls: "ticker-footer" });
+    newsFooter.createSpan({
+      cls: "ticker-refresh-time",
+      text: formatLastRefreshed(this.plugin.getHeadlinesLastRefreshedAt()),
+    });
+    const refreshNewsButton = newsFooter.createEl("button", {
+      cls: ["clickable-icon", "ticker-refresh-button"],
+      attr: {
+        "aria-label": "Refresh headlines",
+        type: "button",
+        title: "Refresh headlines",
+      },
+    });
+    setIcon(refreshNewsButton, "refresh-cw");
+    refreshNewsButton.addEventListener("click", async () => {
+      refreshNewsButton.disabled = true;
+      try {
+        await this.plugin.refreshHeadlines();
+      } finally {
+        refreshNewsButton.disabled = false;
+      }
+    });
+
+    container.createDiv({ cls: "ticker-divider" });
     const stockScroller = container.createDiv({ cls: "scroller" });
     stockScroller.setAttribute("data-ticker", "stock");
     stockScroller.setAttribute("data-speed", this.stockSpeed);
@@ -274,6 +306,8 @@ class MyPanelView extends ItemView {
     const stocks = quotes.length > 0
       ? quotes.map(toStockDisplayItem)
       : FALLBACK_STOCKS;
+    const lastRefreshedAt =
+      quotes.length > 0 ? this.plugin.getStockLastRefreshedAt() : null;
 
     stocks.forEach(({ symbol, priceText, changeText, isNegative }) => {
       const item = stockList.createEl("li", { cls: "stock-item" });
@@ -282,6 +316,30 @@ class MyPanelView extends ItemView {
       const changeSpan = item.createSpan({ text: changeText, cls: "stock-change" });
       if (isNegative) {
         changeSpan.addClass("is-negative");
+      }
+    });
+
+    container.createDiv({ cls: "ticker-divider" });
+    const stockFooter = container.createDiv({ cls: "ticker-footer" });
+    stockFooter.createSpan({
+      cls: "ticker-refresh-time",
+      text: formatLastRefreshed(lastRefreshedAt),
+    });
+    const refreshButton = stockFooter.createEl("button", {
+      cls: ["clickable-icon", "ticker-refresh-button"],
+      attr: {
+        "aria-label": "Refresh stock quotes",
+        type: "button",
+        title: "Refresh stock quotes",
+      },
+    });
+    setIcon(refreshButton, "refresh-cw");
+    refreshButton.addEventListener("click", async () => {
+      refreshButton.disabled = true;
+      try {
+        await this.plugin.refreshStocks();
+      } finally {
+        refreshButton.disabled = false;
       }
     });
     this.applyColorVars();
@@ -415,6 +473,8 @@ export default class GlobalTicker extends Plugin {
       return [];
 		}
 
+		console.log("Fetching news headlines from Currents API");
+
 		const category = this.settings.currentsCategory.trim();
 		const region = this.settings.currentsRegion.trim();
 		const language = this.settings.currentsLanguage.trim();
@@ -499,6 +559,8 @@ export default class GlobalTicker extends Plugin {
 		if (!apiKey) {
 			return [];
 		}
+
+		console.log("Fetching stock quotes from Finnhub");
 
 		return fetchFinnhubStockQuotes({
 			apiKey,
@@ -632,6 +694,14 @@ export default class GlobalTicker extends Plugin {
 				}
 			})
 		);
+	}
+
+	getHeadlinesLastRefreshedAt(): number | null {
+		return this.headlinesCache?.fetchedAt ?? null;
+	}
+
+	getStockLastRefreshedAt(): number | null {
+		return this.stockQuotesCache?.fetchedAt ?? null;
 	}
 
 	updateTickerSettings() {
