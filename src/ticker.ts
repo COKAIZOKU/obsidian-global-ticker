@@ -1,4 +1,6 @@
-// https://codepen.io/kevinpowell/pen/BavVLra
+// getGap and getItemsWidth are used to calculate the total width of the items in the ticker
+// Including any gaps between them
+// This is important for determining the amount of clones
 const getGap = (scrollerInner: HTMLElement): number => {
   const style = getComputedStyle(scrollerInner);
   const gapValue = Number.parseFloat(style.columnGap || "");
@@ -19,6 +21,7 @@ const getItemsWidth = (items: Element[], gap: number): number => {
   return total + gaps;
 };
 
+// Calculates the animation duration based on the distance to loop and the speed setting
 export function applyTickerSpeed(scroller: HTMLElement): void {
   const scrollerInner = scroller.querySelector<HTMLElement>(".scroller__inner");
   if (!scrollerInner) {
@@ -38,7 +41,7 @@ export function applyTickerSpeed(scroller: HTMLElement): void {
   }
 
   const speedKey = scroller.dataset.speed ?? "medium";
-  const speedPxPerSec =
+  const speedPxPerSec = 
     speedKey === "fast"
       ? 120
       : speedKey === "slow"
@@ -50,14 +53,17 @@ export function applyTickerSpeed(scroller: HTMLElement): void {
   scroller.style.setProperty("--_animation-duration", `${duration}s`);
 }
 
+// Initializes the ticker by cloning items to create a seamless loop and applying animation settings
 export function initTicker(root: ParentNode = document): void {
-  // If a user hasn't opted in for reduced motion, then we add the animation.
+  // If a user hasn't opted in for reduced motion, then we add the animation
+  // The reduced motion option will kill the animation and will make the plugin useless 
+  // Sommetimes it will also make the plugin look broken
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     return;
   }
 
-  const MAX_VIEWPORT_PX = 8000;
-  const MAX_CLONES = 100;
+  const MAX_VIEWPORT_PX = 8000; // Cap the viewport width for clones
+  const MAX_CLONES = 100; // Absolute cap on clones to prevent infinite loops
 
   const scrollers = root.querySelectorAll<HTMLElement>(".scroller");
 
@@ -90,6 +96,7 @@ export function initTicker(root: ParentNode = document): void {
       });
     };
 
+    // Remove any existing clones when recalculating size
     const removeClones = () => {
       Array.from(scrollerInner.children).forEach((child) => {
         const el = child as HTMLElement;
@@ -101,7 +108,7 @@ export function initTicker(root: ParentNode = document): void {
         }
       });
     };
-
+  
     const ensureSeamlessLoop = (): boolean => {
       removeClones();
       const scrollerWidth = scroller.getBoundingClientRect().width;
@@ -113,12 +120,13 @@ export function initTicker(root: ParentNode = document): void {
         return false;
       }
 
-      // Always add one full copy so we can measure the true loop distance.
+      // Always add one full copy to measure the true loop distance
       appendClones(originalItems);
 
+      // Everything below here is about measuring the loop distance and adding additional clones as needed 
       const scrollerRect = scrollerInner.getBoundingClientRect();
-      const firstOriginal = originalItems[0] as HTMLElement | undefined;
-      const firstClone = scrollerInner.querySelector<HTMLElement>(
+      const firstOriginal = originalItems[0] as HTMLElement | undefined; 
+      const firstClone = scrollerInner.querySelector<HTMLElement>( 
         '[data-ticker-clone="true"]'
       );
       const gap = getGap(scrollerInner);
@@ -138,7 +146,7 @@ export function initTicker(root: ParentNode = document): void {
       }
 
       const maxViewport = Math.min(scrollerWidth, MAX_VIEWPORT_PX);
-      const copiesNeeded = Math.max(
+      const copiesNeeded = Math.max( 
         2,
         Math.ceil((maxViewport + loopDistance) / loopDistance)
       );
@@ -162,13 +170,15 @@ export function initTicker(root: ParentNode = document): void {
       scroller.style.setProperty("--_loop-distance", `${loopDistance}px`);
       return true;
     };
-
+    
+    // After rebuilding the clones and recalculating the loop distance the animation needs to be restarted
     const restartAnimation = () => {
       scrollerInner.style.animation = "none";
       scrollerInner.offsetHeight;
       scrollerInner.style.removeProperty("animation");
     };
 
+    // Recalculates the necessary clones and animation settings for the ticker
     const rebuild = () => {
       scroller.style.setProperty("--_animation-play-state", "paused");
       if (!ensureSeamlessLoop()) {
@@ -181,6 +191,8 @@ export function initTicker(root: ParentNode = document): void {
 
     requestAnimationFrame(rebuild);
 
+    // Use ResizeObserver if available for more efficient resizing
+    // Otherwise fall back to window resize event
     if (typeof ResizeObserver !== "undefined") {
       const observer = new ResizeObserver(() => {
         rebuild();

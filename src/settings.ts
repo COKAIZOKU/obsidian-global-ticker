@@ -385,6 +385,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
+		// Global Settings Section
+
         containerEl.createEl('div', {
             text: 'Global Settings',
             cls: 'setting-item-name setting-section-header'
@@ -447,6 +449,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                             .saveSettings();
                     });
             });
+
+		// News Settings Section
 
         containerEl.createEl('div', {
             text: 'News Settings',
@@ -512,7 +516,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Exclude domains')
-            .setDesc('Exclude headlines from specific domains.')
+            .setDesc('Exclude headlines from specific domains. If a domain appears in both the included and excluded domains, it will be excluded.')
             .addTextArea(text => text.setPlaceholder('e.g. bbc.com, nytimes.com').setValue(this.plugin.settings.currentsExcludeDomains).onChange(async(value) => {
                 this.plugin.settings.currentsExcludeDomains = value.trim();
                 await this
@@ -609,7 +613,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Show news footer")
-            .setDesc("Toggle the last refreshed info and refresh button for news.")
+            .setDesc("Toggle the last refreshed info and refresh button for news. Beware of the daily limit of 20 requests with the free Currents API key.")
             .addToggle(toggle => {
                 toggle
                     .setValue(this.plugin.settings.showNewsFooter)
@@ -664,6 +668,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         }
                     });
             });
+
+		// Stocks Settings Section
 
         containerEl.createEl('div', {
             text: 'Stocks Settings',

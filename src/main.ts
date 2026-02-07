@@ -11,7 +11,8 @@ import { applyTickerSpeed, initTicker } from "./ticker";
 import { fetchCurrentsHeadlines } from "./api/news";
 import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/stocks";
 
-const VIEW_TYPE_MY_PANEL = "my-plugin-panel";
+// Constants related to ticker cloning logic
+const VIEW_TYPE_MY_PANEL = "global-ticker-panel";
 interface HeadlineItem {
   title: string;
   url?: string;
@@ -19,8 +20,11 @@ interface HeadlineItem {
   category?: string | string[];
 }
 
-const HEADLINE_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // the cache lifetime is 24 hours
+// Cache lifetime
+const HEADLINE_CACHE_TTL_MS = 12 * 60 * 60 * 1000; 
 const STOCK_CACHE_TTL_MS = 60 * 1000;
+
+// Ticker fallbacks for fetch failures or missing API keys
 const FALLBACK_HEADLINES: HeadlineItem[] = [
   { title: "Sample Headline 1: Please Add Your API Key" },
   { title: "Sample Headline 2: To Fetch Live News" },
@@ -39,6 +43,7 @@ const FALLBACK_STOCKS: Array<{
   { symbol: "STOCKS", priceText: "$HERE", changeText: "+NOW%", isNegative: false },
 ];
 
+// Cleans up and standarizes domains entered by the user, settings for news API requests
 const normalizeDomains = (input: string): string[] => {
   if (!input) {
     return [];
@@ -64,6 +69,7 @@ const normalizeDomains = (input: string): string[] => {
     .filter(Boolean);
 };
 
+// Normalizes different headline and formats into a consistent structure used internally
 const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
   if (!item) {
     return null;
@@ -108,6 +114,7 @@ const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
   return null;
 };
 
+// Gets source field, if not available tries to extract domain from url, if that fails returns null
 const getSourceLabel = (headline: HeadlineItem): string | null => {
   const source = headline.source?.trim();
   if (source) {
@@ -125,6 +132,7 @@ const getSourceLabel = (headline: HeadlineItem): string | null => {
   }
 };
 
+// Gets category field, if it's an array returns the first non-empty value, if it's a string returns it if non-empty, otherwise returns null
 const getCategoryLabel = (headline: HeadlineItem): string | null => {
   const { category } = headline;
   if (!category) {
@@ -138,7 +146,7 @@ const getCategoryLabel = (headline: HeadlineItem): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
-
+// Formats a number as a price string, or "N/A" if undefined
 const formatPrice = (value?: number): string =>
   value === undefined ? "N/A" : `$${value.toFixed(2)}`;
 
@@ -150,6 +158,7 @@ const formatChange = (value?: number): string => {
   return `${sign}${value.toFixed(2)}%`;
 };
 
+// Formats the timestamp of the footer
 const formatLastRefreshed = (
   timestamp?: number | null,
   useUsDateFormat?: boolean
@@ -169,6 +178,7 @@ const formatLastRefreshed = (
   return `Last refreshed: ${formatted} ${hours}:${minutes}`;
 };
 
+// Transforms a StockQuote into the format needed for display in the ticker, also determines if the change is negative for coloring purposes
 const toStockDisplayItem = (quote: StockQuote): {
   symbol: string;
   priceText: string;
@@ -181,36 +191,39 @@ const toStockDisplayItem = (quote: StockQuote): {
   isNegative: (quote.changePercent ?? 0) < 0,
 });
 
+// Cache for headlines
 interface HeadlinesCache {
   cacheKey: string;
   fetchedAt: number;
   headlines: HeadlineItem[];
 }
 
+// Data structure for plugin storage, currently stores settings and headlines cache
 interface PluginData {
   settings?: Partial<GlobalTickerSettings>;
   headlinesCache?: HeadlinesCache | null;
 }
 
-interface LegacyAlpacaSettings {
-  alpacaApiKey?: string;
-  alpacaApiSecret?: string;
-  alpacaSymbols?: string;
-}
-
+// The main view class for the panel
 class MyPanelView extends ItemView {
+
   private plugin: GlobalTicker;
+
   private newsSpeed: TickerSpeed;
   private stockSpeed: TickerSpeed;
+
   private newsDirection: TickerDirection;
   private stockDirection: TickerDirection;
+
+  private stockPriceColor: string;
   private stockChangeColor: string;
   private stockChangeNegativeColor: string;
-  private stockPriceColor: string;
-  private newsSectionEl?: HTMLElement;
+  
   private stockSectionEl?: HTMLElement;
-  private newsFooterGroupEl?: HTMLElement;
+  private newsSectionEl?: HTMLElement;
+  
   private stockFooterGroupEl?: HTMLElement;
+  private newsFooterGroupEl?: HTMLElement;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -234,6 +247,7 @@ class MyPanelView extends ItemView {
     this.stockChangeNegativeColor = stockChangeNegativeColor;
   }
 
+  // Update ticker settings
   setTickerSettings(
     newsSpeed: TickerSpeed,
     stockSpeed: TickerSpeed,
@@ -247,6 +261,7 @@ class MyPanelView extends ItemView {
     this.applyTickerSettings();
   }
 
+  // Update stock color settings
   setStockColors(
     stockPriceColor: string,
     stockChangeColor: string,
@@ -257,7 +272,8 @@ class MyPanelView extends ItemView {
     this.stockChangeNegativeColor = stockChangeNegativeColor;
     this.applyColorVars();
   }
-
+  
+  // Apply ticker settings to the scrollers
   private applyTickerSettings() {
     const newsScroller = this.containerEl.querySelector<HTMLElement>(
       '.scroller[data-ticker="news"]'
@@ -277,7 +293,8 @@ class MyPanelView extends ItemView {
       );
     }
   }
-
+  
+  // Apply settings to a single scroller element
   private applyScrollerSettings(
     scroller: HTMLElement,
     speed: TickerSpeed,
@@ -288,6 +305,7 @@ class MyPanelView extends ItemView {
     applyTickerSpeed(scroller);
   }
 
+  // Load headlines into the provided list element
   private async loadHeadlines(list: HTMLUListElement) {
     const headlines = await this.plugin.getHeadlines();
     list.empty();
@@ -320,6 +338,7 @@ class MyPanelView extends ItemView {
     });
   }
 
+  // Apply stock color variables to the stock ticker
   private applyColorVars() {
     this.setColorVar("--stock-price-color", this.stockPriceColor);
     this.setColorVar("--stock-change-color", this.stockChangeColor);
@@ -328,7 +347,8 @@ class MyPanelView extends ItemView {
       this.stockChangeNegativeColor
     );
   }
-
+  
+  // Set a CSS variable for stock colors
   private setColorVar(name: string, value: string) {
     const trimmed = value.trim();
     if (trimmed.length > 0) {
@@ -342,14 +362,18 @@ class MyPanelView extends ItemView {
     return VIEW_TYPE_MY_PANEL;
   }
 
+  // Icon for the sidebar/panel
   getIcon() {
 	return "rss";
   }
 
+  // Title that appears on the panel
   getDisplayText() {
-    return "News";
+    return "Global Ticker";
   }
 
+  // Render the news ticker section
+  // Applies headlines, speed and direction settings
   private async renderNewsSection(section: HTMLElement) {
     section.empty();
     const scroller = section.createDiv({ cls: "scroller" });
@@ -361,6 +385,8 @@ class MyPanelView extends ItemView {
     await this.loadHeadlines(list);
   }
 
+  // Render the stocks ticker section
+  // Applies stock data, speed, direction and color settings
   private async renderStocksSection(section: HTMLElement): Promise<number | null> {
     section.empty();
     const stockScroller = section.createDiv({ cls: "scroller" });
@@ -390,6 +416,8 @@ class MyPanelView extends ItemView {
     return lastRefreshedAt;
   }
 
+  // Footers, both have the same logic but are separated to allow independent toggling
+  // Render the footer for the news ticker
   private renderNewsFooter(group: HTMLElement) {
     group.empty();
     group.createDiv({ cls: "ticker-divider" });
@@ -427,6 +455,7 @@ class MyPanelView extends ItemView {
     group.createDiv({ cls: "ticker-divider" });
   }
 
+  // Render the footer for the stocks ticker
   private renderStockFooter(group: HTMLElement, lastRefreshedAt: number | null) {
     group.empty();
 
@@ -462,6 +491,8 @@ class MyPanelView extends ItemView {
     });
   }
 
+  // Main render function that sets up the sections based on display mode
+  // Display mode can be news only, stocks only or both, and the layout adjusts accordingly
   private async render() {
     const container = this.containerEl; // main content area
     container.empty();
@@ -505,6 +536,7 @@ class MyPanelView extends ItemView {
     await this.render();
   }
 
+  // Refresh headlines section, re-fetches headlines and updates the section
   async refreshHeadlines() {
     const displayMode: TickerDisplayMode =
       this.plugin.settings.tickerDisplayMode ?? "both";
@@ -522,6 +554,7 @@ class MyPanelView extends ItemView {
     initTicker(this.newsSectionEl);
   }
 
+  // Refresh stocks section, re-fetches stock quotes and updates the section
   async refreshStocks() {
     const displayMode: TickerDisplayMode =
       this.plugin.settings.tickerDisplayMode ?? "both";
@@ -538,17 +571,13 @@ class MyPanelView extends ItemView {
     }
     initTicker(this.stockSectionEl);
   }
-
-  async onClose() {
-    // clean up if needed
-  }
 }
 
-// Remember to rename these classes and interfaces!
-
+// Main plugin class that Obsidian interacts with, handles loading, settings, commands and data fetching/caching
 export default class GlobalTicker extends Plugin {
+
 	settings: GlobalTickerSettings;
-	private headlinesCache: HeadlinesCache | null = null;
+	private headlinesCache: HeadlinesCache | null = null; 
 	private stockQuotesCache: { cacheKey: string; fetchedAt: number; quotes: StockQuote[] } | null = null;
 
 	async onload() {
@@ -562,7 +591,7 @@ export default class GlobalTicker extends Plugin {
 			this.app.workspace.revealLeaf(leaf);
 		});
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
+		// This adds a view to the workspace, which can be opened via the command palette, ribbon icon, or programmatically.
 		this.registerView(
 			VIEW_TYPE_MY_PANEL,
 			(leaf) =>
@@ -581,50 +610,21 @@ export default class GlobalTicker extends Plugin {
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-my-panel',
-			name: 'Open my Panel',
+			id: 'open-global-ticker-panel',
+			name: 'Open Global Ticker Panel',
 			callback: () => {
 				const leaf = this.app.workspace.getLeaf(true);
 				leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
 				this.app.workspace.revealLeaf(leaf);
 			}
 		});
+
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'replace-selected',
 			name: 'Replace selected content',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new MyPanelView(
-							this.app.workspace.getLeaf(true),
-							this,
-							this.settings.newsTickerSpeed,
-							this.settings.stockTickerSpeed,
-							this.settings.newsTickerDirection,
-							this.settings.stockTickerDirection,
-							this.settings.stockPriceColor,
-							this.settings.stockChangeColor,
-							this.settings.stockChangeNegativeColor
-						);
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
 			}
 		});
 
@@ -644,6 +644,7 @@ export default class GlobalTicker extends Plugin {
 	onunload() {
 	}
 
+  // Builds a cache key for the headlines based on the current settings, used to determine if cached data can be reused
 	private buildHeadlinesCacheKey(resolvedLimit: number) {
 		const domains = normalizeDomains(this.settings.currentsDomains).join(",");
 		const excludedDomains = normalizeDomains(this.settings.currentsExcludeDomains).join(",");
@@ -657,6 +658,8 @@ export default class GlobalTicker extends Plugin {
 		});
 	}
 
+  // Fetches headlines from the Currents API based on the current settings and resolved limit
+  // The settings here are used to build the request parameters
   private async fetchHeadlinesFromApi(resolvedLimit: number): Promise<HeadlineItem[]> {
     const apiKey = this.settings.currentsApiKey.trim();
     if (!apiKey) {
@@ -680,11 +683,14 @@ export default class GlobalTicker extends Plugin {
 			params: excludedDomains.length > 0 ? { domain_not: excludedDomains } : undefined,
 		};
 
+    // Handle multiple domains by fetching separately and merging results
 		if (domains.length > 0) {
 			const startDate = new Date(Date.now() - HEADLINE_CACHE_TTL_MS).toISOString();
 			const collected: HeadlineItem[] = [];
 			const seen = new Set<string>();
 
+      // Merge results from multiple domain requests
+      // Respects the overall limit and avoids duplicates based on title and url
 			for (const domain of domains) {
 				const domainResults = await fetchCurrentsHeadlines({
 					...baseOptions,
@@ -723,11 +729,13 @@ export default class GlobalTicker extends Plugin {
 			return collected.slice(0, resolvedLimit);
 		}
 
+    // Get headlines without domain filtering if no domains specified
 		const results = await fetchCurrentsHeadlines({
 			...baseOptions,
 			endpoint: "latest-news",
 		});
 
+    // Normalize and filter results into the consistent internal format, also filter out any items that don't have a valid title after normalization
 		const headlines = results
 			.map((item) =>
 					normalizeHeadlineItem({
@@ -742,6 +750,7 @@ export default class GlobalTicker extends Plugin {
 		return headlines;
   }
 
+  // Saves plugin data: settings and headlines cache
 	private async savePluginData() {
 		await this.saveData({
 			settings: this.settings,
@@ -749,6 +758,8 @@ export default class GlobalTicker extends Plugin {
 		});
 	}
 
+  // Builds a cache key for stock quotes based on the list of symbols
+  // Used to determine if cached data can be reused
 	private buildStockCacheKey(symbols: string[]) {
 		return JSON.stringify({ symbols });
 	}
@@ -767,6 +778,8 @@ export default class GlobalTicker extends Plugin {
 		});
 	}
 
+  // Main function to get headlines, handles caching logic and fallback scenarios
+  // The fallback scenario occurs if no API key is provided or if the fetch fails
   async getHeadlines(
     options?: { forceRefresh?: boolean; showNotice?: boolean }
   ): Promise<HeadlineItem[]> {
@@ -825,6 +838,7 @@ export default class GlobalTicker extends Plugin {
 		return FALLBACK_HEADLINES.slice(0, resolvedLimit);
 	}
 
+  // Refresh headlines section, clears cache and re-fetches data, then updates all open panels
 	async refreshHeadlines() {
 		await this.getHeadlines({ forceRefresh: true, showNotice: true });
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
@@ -838,6 +852,8 @@ export default class GlobalTicker extends Plugin {
 		);
 	}
 
+  // Main function to get stock quotes, handles caching logic and fallback scenarios
+  // The fallback scenario occurs if no API key is provided or if the fetch fails
 	async getStockQuotes(options?: { forceRefresh?: boolean }): Promise<StockQuote[]> {
 		const symbols = normalizeStockSymbols(this.settings.finnhubSymbols);
 		if (symbols.length === 0) {
@@ -881,6 +897,7 @@ export default class GlobalTicker extends Plugin {
 		return [];
 	}
 
+  // Refresh stocks section, clears cache and re-fetches data, then updates all open panels
 	async refreshStocks() {
 		this.stockQuotesCache = null;
 		await this.getStockQuotes({ forceRefresh: true });
@@ -895,6 +912,7 @@ export default class GlobalTicker extends Plugin {
 		);
 	}
 
+  // Refreshes all open panels, re-rendering their content
 	async refreshPanels() {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		await Promise.all(
@@ -907,6 +925,7 @@ export default class GlobalTicker extends Plugin {
 		);
 	}
 
+  // If the setting is enabled, refreshes headlines and stocks when the app is opened
 	private async refreshOnAppOpen() {
 		try {
 			await this.getHeadlines({ forceRefresh: true, showNotice: false });
@@ -923,14 +942,17 @@ export default class GlobalTicker extends Plugin {
 		await this.refreshPanels();
 	}
 
+  // Gets the timestamp of the last successful headlines fetch, or null if no data
 	getHeadlinesLastRefreshedAt(): number | null {
 		return this.headlinesCache?.fetchedAt ?? null;
 	}
 
+ // Gets the timestamp of the last successful stock quotes fetch, or null if no data
 	getStockLastRefreshedAt(): number | null {
 		return this.stockQuotesCache?.fetchedAt ?? null;
 	}
 
+  // Updates ticker settings (speed and direction) for all open panels
 	updateTickerSettings() {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		leaves.forEach((leaf) => {
@@ -946,6 +968,7 @@ export default class GlobalTicker extends Plugin {
 		});
 	}
 
+  // Updates ticker color settings for all open panels
 	updateTickerColors() {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		leaves.forEach((leaf) => {
@@ -960,6 +983,7 @@ export default class GlobalTicker extends Plugin {
 		});
 	}
 
+  // Loads settings and headlines cache from plugin data storage
 	async loadSettings() {
 		const data = await this.loadData();
 		if (data && typeof data === "object" && "settings" in data) {
@@ -969,20 +993,6 @@ export default class GlobalTicker extends Plugin {
 				DEFAULT_SETTINGS,
 				typedData.settings ?? {}
 			);
-			const legacyAlpaca = typedData.settings as LegacyAlpacaSettings | undefined;
-			if (!mergedSettings.finnhubApiKey && legacyAlpaca?.alpacaApiKey) {
-				mergedSettings.finnhubApiKey = legacyAlpaca.alpacaApiKey;
-			}
-			if (!mergedSettings.finnhubSymbols && legacyAlpaca?.alpacaSymbols) {
-				mergedSettings.finnhubSymbols = legacyAlpaca.alpacaSymbols;
-			}
-			const legacyTickerSpeed = typedData.settings?.tickerSpeed;
-			if (!typedData.settings?.newsTickerSpeed && legacyTickerSpeed) {
-				mergedSettings.newsTickerSpeed = legacyTickerSpeed;
-			}
-			if (!typedData.settings?.stockTickerSpeed && legacyTickerSpeed) {
-				mergedSettings.stockTickerSpeed = legacyTickerSpeed;
-			}
 			this.settings = mergedSettings;
 			this.headlinesCache = typedData.headlinesCache ?? null;
       if (this.headlinesCache && Array.isArray(this.headlinesCache.headlines)) {
@@ -998,23 +1008,9 @@ export default class GlobalTicker extends Plugin {
       }
 			return;
 		}
-
+    
 		const rawSettings = data as Partial<GlobalTickerSettings>;
 		const mergedSettings = Object.assign({}, DEFAULT_SETTINGS, rawSettings);
-		const legacyAlpaca = rawSettings as LegacyAlpacaSettings | undefined;
-		if (!mergedSettings.finnhubApiKey && legacyAlpaca?.alpacaApiKey) {
-			mergedSettings.finnhubApiKey = legacyAlpaca.alpacaApiKey;
-		}
-		if (!mergedSettings.finnhubSymbols && legacyAlpaca?.alpacaSymbols) {
-			mergedSettings.finnhubSymbols = legacyAlpaca.alpacaSymbols;
-		}
-		const legacyTickerSpeed = rawSettings?.tickerSpeed;
-		if (!rawSettings?.newsTickerSpeed && legacyTickerSpeed) {
-			mergedSettings.newsTickerSpeed = legacyTickerSpeed;
-		}
-		if (!rawSettings?.stockTickerSpeed && legacyTickerSpeed) {
-			mergedSettings.stockTickerSpeed = legacyTickerSpeed;
-		}
 		this.settings = mergedSettings;
 		this.headlinesCache = null;
 	}
