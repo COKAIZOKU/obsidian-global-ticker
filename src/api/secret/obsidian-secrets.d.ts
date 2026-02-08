@@ -1,4 +1,4 @@
-import type { App, BaseComponent } from "obsidian";
+import type { BaseComponent } from "obsidian";
 
 // Provides type definitions for Obsidian's SecretStorage API 
 // This module extends the existing Obsidian types to include the SecretStorage interface and related components

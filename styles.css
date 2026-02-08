@@ -43,6 +43,10 @@
   animation-play-state: var(--_animation-play-state, running);
 }
 
+.scroller[data-animated="true"] .scroller__inner.is-restarting {
+  animation: none !important;
+}
+
 .scroller__inner [data-ticker-clone="true"] {
   display: inline-flex !important;
   visibility: visible !important;

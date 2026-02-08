@@ -50,7 +50,7 @@ export function applyTickerSpeed(scroller: HTMLElement): void {
           ? 20
           : 80;
   const duration = distance / speedPxPerSec;
-  scroller.style.setProperty("--_animation-duration", `${duration}s`);
+  scroller.setCssProps({ "--_animation-duration": `${duration}s` });
 }
 
 // Initializes the ticker by cloning items to create a seamless loop and applying animation settings
@@ -74,7 +74,7 @@ export function initTicker(root: ParentNode = document): void {
 
     // Enable nowrap sizing but pause animation until clones are ready.
     scroller.setAttribute("data-animated", "true");
-    scroller.style.setProperty("--_animation-play-state", "paused");
+    scroller.setCssProps({ "--_animation-play-state": "paused" });
 
     // Make an array from the elements within `.scroller__inner`.
     const scrollerInner = scroller.querySelector<HTMLElement>(".scroller__inner");
@@ -89,9 +89,6 @@ export function initTicker(root: ParentNode = document): void {
         const duplicatedItem = item.cloneNode(true) as HTMLElement;
         duplicatedItem.setAttribute("aria-hidden", "true");
         duplicatedItem.setAttribute("data-ticker-clone", "true");
-        duplicatedItem.style.setProperty("display", "inline-flex", "important");
-        duplicatedItem.style.setProperty("visibility", "visible", "important");
-        duplicatedItem.style.setProperty("opacity", "1", "important");
         scrollerInner.appendChild(duplicatedItem);
       });
     };
@@ -167,25 +164,25 @@ export function initTicker(root: ParentNode = document): void {
           }
         );
       }
-      scroller.style.setProperty("--_loop-distance", `${loopDistance}px`);
+      scroller.setCssProps({ "--_loop-distance": `${loopDistance}px` });
       return true;
     };
     
     // After rebuilding the clones and recalculating the loop distance the animation needs to be restarted
     const restartAnimation = () => {
-      scrollerInner.style.animation = "none";
-      scrollerInner.offsetHeight;
-      scrollerInner.style.removeProperty("animation");
+      scrollerInner.classList.add("is-restarting");
+      void scrollerInner.offsetHeight;
+      scrollerInner.classList.remove("is-restarting");
     };
 
     // Recalculates the necessary clones and animation settings for the ticker
     const rebuild = () => {
-      scroller.style.setProperty("--_animation-play-state", "paused");
+      scroller.setCssProps({ "--_animation-play-state": "paused" });
       if (!ensureSeamlessLoop()) {
         return;
       }
       applyTickerSpeed(scroller);
-      scroller.style.removeProperty("--_animation-play-state");
+      scroller.setCssProps({ "--_animation-play-state": "running" });
       restartAnimation();
     };
 

@@ -1,4 +1,4 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin, ItemView, WorkspaceLeaf, setIcon} from 'obsidian';
+import {Notice, Plugin, ItemView, WorkspaceLeaf, setIcon} from 'obsidian';
 import {
   DEFAULT_SETTINGS,
   GlobalTickerSettings,
