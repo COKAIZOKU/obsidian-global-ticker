@@ -11,6 +11,10 @@ export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
 export type TickerDirection = "left" | "right";
 export type TickerDisplayMode = "both" | "news" | "stocks";
 
+// Some ESLint rules are disabled because it's pointing at my texts that are separated to give it a link
+// Also not sure if its necessary that the text placeholder for the text box is needed, is just based off 
+// The example that is already in Obsidian, which is '.obsidian' on the Files and links settings
+
 export interface GlobalTickerSettings {
     mySetting : string;
     newsTickerSpeed : TickerSpeed;
@@ -910,7 +914,3 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             });
     }
 }
-
-// Some ESLint rules are disabled because it's pointing at my texts that are separated to give it a link
-// also not sure if its necessary that the text placeholder for the text box is needed, is just based off 
-// the example that is already in Obsidian, which is '.obsidian' on the Files and links settings
