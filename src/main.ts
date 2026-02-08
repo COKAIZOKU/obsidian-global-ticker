@@ -445,13 +445,15 @@ class MyPanelView extends ItemView {
       },
     });
     setIcon(refreshNewsButton, "refresh-cw");
-    refreshNewsButton.addEventListener("click", async () => {
-      refreshNewsButton.disabled = true;
-      try {
-        await this.plugin.refreshHeadlines();
-      } finally {
-        refreshNewsButton.disabled = false;
-      }
+    refreshNewsButton.addEventListener("click", () => {
+      void (async () => {
+        refreshNewsButton.disabled = true;
+        try {
+          await this.plugin.refreshHeadlines();
+        } finally {
+          refreshNewsButton.disabled = false;
+        }
+      })();
     });
 
     group.createDiv({ cls: "ticker-divider" });
@@ -483,13 +485,15 @@ class MyPanelView extends ItemView {
       },
     });
     setIcon(refreshButton, "refresh-cw");
-    refreshButton.addEventListener("click", async () => {
-      refreshButton.disabled = true;
-      try {
-        await this.plugin.refreshStocks();
-      } finally {
-        refreshButton.disabled = false;
-      }
+    refreshButton.addEventListener("click", () => {
+      void (async () => {
+        refreshButton.disabled = true;
+        try {
+          await this.plugin.refreshStocks();
+        } finally {
+          refreshButton.disabled = false;
+        }
+      })();
     });
   }
 
@@ -587,11 +591,11 @@ export default class GlobalTicker extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('rss', 'Open Global Ticker', () => {
+		this.addRibbonIcon('rss', 'Open global ticker', () => {
 			// Called when the user clicks the icon.
 			const leaf = this.app.workspace.getLeaf(true);
-			leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
-			this.app.workspace.revealLeaf(leaf);
+			void leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
+			void this.app.workspace.revealLeaf(leaf);
 		});
 
 		// This adds a view to the workspace, which can be opened via the command palette, ribbon icon, or programmatically.
@@ -613,12 +617,12 @@ export default class GlobalTicker extends Plugin {
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-global-ticker-panel',
-			name: 'Open Global Ticker Panel',
+			id: 'open-panel',
+			name: 'Open panel',
 			callback: () => {
 				const leaf = this.app.workspace.getLeaf(true);
-				leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
-				this.app.workspace.revealLeaf(leaf);
+				void leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
+				void this.app.workspace.revealLeaf(leaf);
 			}
 		});
 
@@ -732,7 +736,7 @@ export default class GlobalTicker extends Plugin {
       return [];
 		}
 
-		console.log("Fetching news headlines from Currents API");
+		// console.log("Fetching news headlines from Currents API");
 
 		const category = this.settings.currentsCategory.trim();
 		const region = this.settings.currentsRegion.trim();
@@ -837,7 +841,7 @@ export default class GlobalTicker extends Plugin {
 			return [];
 		}
 
-		console.log("Fetching stock quotes from Finnhub");
+		// console.log("Fetching stock quotes from Finnhub");
 
 		return fetchFinnhubStockQuotes({
 			apiKey,
@@ -891,9 +895,9 @@ export default class GlobalTicker extends Plugin {
         return headlines.slice(0, resolvedLimit);
       }
 		} catch (error) {
-			console.error("Failed to fetch Currents headlines", error);
+			console.error("Failed to fetch headlines", error);
 			if (showNotice) {
-				new Notice("Failed to fetch Currents headlines. Showing cached items.");
+				new Notice("Failed to fetch headlines. Showing cached items.");
 			}
 		}
 
@@ -927,8 +931,8 @@ export default class GlobalTicker extends Plugin {
         refreshed = true;
       }
     } catch (error) {
-      console.error("Failed to fetch Currents headlines", error);
-      new Notice("Failed to fetch Currents headlines. Showing cached items.");
+      console.error("Failed to fetch headlines", error);
+      new Notice("Failed to fetch headlines. Showing cached items.");
     }
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		await Promise.all(
@@ -978,7 +982,7 @@ export default class GlobalTicker extends Plugin {
 				return quotes.slice(0, symbols.length);
 			}
 		} catch (error) {
-			console.error("Failed to fetch Finnhub stock quotes", error);
+			console.error("Failed to fetch stock quotes", error);
 		}
 
 		if (cacheMatches && cache?.quotes.length) {
@@ -1009,7 +1013,7 @@ export default class GlobalTicker extends Plugin {
         refreshed = true;
       }
     } catch (error) {
-      console.error("Failed to fetch Finnhub stock quotes", error);
+      console.error("Failed to fetch stock quotes", error);
     }
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		await Promise.all(
@@ -1096,7 +1100,7 @@ export default class GlobalTicker extends Plugin {
 
   // Loads settings and headlines cache from plugin data storage
 	async loadSettings() {
-		const data = await this.loadData();
+		const data: unknown = await this.loadData();
 		if (data && typeof data === "object" && "settings" in data) {
 			const typedData = data as PluginData;
 			const mergedSettings = Object.assign(
