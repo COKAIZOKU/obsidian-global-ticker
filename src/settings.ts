@@ -1,4 +1,4 @@
-import {App, Notice, PluginSettingTab, Setting, SettingTab} from "obsidian";
+import {App, Notice, PluginSettingTab, SecretComponent, Setting} from "obsidian";
 import GlobalTicker from "./main";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
@@ -459,7 +459,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         const descCurrentsKey = createFragment();
         descCurrentsKey.appendText('Used to fetch live headlines, without it you will only see placeholder headlines' +
-                '. Get the free Currents API key by creating an account ');
+                '. Select a secret from SecretStorage. Get the free Currents API key by creating an account ');
         descCurrentsKey.appendChild(createEl('a', {
             text: 'here',
             href: 'https://currentsapi.services/'
@@ -469,12 +469,15 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Currents API key')
             .setDesc(descCurrentsKey)
-            .addText(text => text.setPlaceholder('Enter your Currents API key').setValue(this.plugin.settings.currentsApiKey).onChange(async(value) => {
-                this.plugin.settings.currentsApiKey = value.trim();
-                await this
-                    .plugin
-                    .saveSettings();
-            }));
+            .addComponent(el => new SecretComponent(this.app, el)
+                .setValue(this.plugin.settings.currentsApiKey)
+                .onChange(async(value) => {
+                    const normalized = (value ?? "").trim();
+                    this.plugin.settings.currentsApiKey = normalized;
+                    await this
+                        .plugin
+                        .saveSettings();
+                }));
 
         const descCategory = createFragment();
         descCategory.appendText('By default all categories are included. Some supported categories are: regional,' +
@@ -678,7 +681,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         const descFinnhubKey = createFragment();
         descFinnhubKey.appendText('Used to fetch stocks data. without it you will only see placeholder stocks data.' +
-                ' Get the free Finnhub API key by creating an account ');
+                ' Select a secret from SecretStorage. Get the free Finnhub API key by creating an account ');
         descFinnhubKey.appendChild(createEl('a', {
             text: 'here',
             href: 'https://finnhub.io'
@@ -688,12 +691,15 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Finnhub API key')
             .setDesc(descFinnhubKey)
-            .addText(text => text.setPlaceholder('Enter your Finnhub API key').setValue(this.plugin.settings.finnhubApiKey).onChange(async(value) => {
-                this.plugin.settings.finnhubApiKey = value.trim();
-                await this
-                    .plugin
-                    .saveSettings();
-            }));
+            .addComponent(el => new SecretComponent(this.app, el)
+                .setValue(this.plugin.settings.finnhubApiKey)
+                .onChange(async(value) => {
+                    const normalized = (value ?? "").trim();
+                    this.plugin.settings.finnhubApiKey = normalized;
+                    await this
+                        .plugin
+                        .saveSettings();
+                }));
 
         const descStockSymbols = createFragment();
         descStockSymbols.appendText('Comma-separated list of stocks ticker symbols to display.');

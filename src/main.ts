@@ -132,7 +132,8 @@ const getSourceLabel = (headline: HeadlineItem): string | null => {
   }
 };
 
-// Gets category field, if it's an array returns the first non-empty value, if it's a string returns it if non-empty, otherwise returns null
+// Gets category field, if it's an array returns the first non-empty value
+// If it's a string returns it if non-empty, otherwise returns null
 const getCategoryLabel = (headline: HeadlineItem): string | null => {
   const { category } = headline;
   if (!category) {
@@ -178,7 +179,8 @@ const formatLastRefreshed = (
   return `Last refreshed: ${formatted} ${hours}:${minutes}`;
 };
 
-// Transforms a StockQuote into the format needed for display in the ticker, also determines if the change is negative for coloring purposes
+// Transforms a StockQuote into the format needed for display in the ticker
+// Also determines if the change is negative for coloring purposes
 const toStockDisplayItem = (quote: StockQuote): {
   symbol: string;
   priceText: string;
@@ -579,6 +581,7 @@ export default class GlobalTicker extends Plugin {
 	settings: GlobalTickerSettings;
 	private headlinesCache: HeadlinesCache | null = null; 
 	private stockQuotesCache: { cacheKey: string; fetchedAt: number; quotes: StockQuote[] } | null = null;
+  private missingSecretNotices = new Set<string>(); 
 
 	async onload() {
 		await this.loadSettings();
@@ -634,6 +637,77 @@ export default class GlobalTicker extends Plugin {
 
 	onunload() {
 	}
+  // Fetches the value of a secret from Obsidian's SecretStorage
+  private async getSecretValue(secretName: string): Promise<string> {
+    const trimmed = secretName.trim();
+    if (!trimmed) {
+      return "";
+    }
+    const storage =
+      this.app.secretStorage ??
+      (this.app as unknown as { secrets?: { get?: unknown } }).secrets ??
+      (this.app as unknown as { vault?: { secretStorage?: { get?: unknown } } })
+        .vault?.secretStorage ??
+      (this.app as unknown as { vault?: { secrets?: { get?: unknown } } }).vault
+        ?.secrets;
+    const storageWithGet = storage as {
+      get?: (key: string) => unknown;
+      getSecret?: (key: string) => unknown;
+    };
+    const getter = storageWithGet.get ?? storageWithGet.getSecret;
+    if (!getter) {
+      return "";
+    }
+    const value = getter.call(storage, trimmed) as
+      | string
+      | null
+      | Promise<string | null>;
+    const resolved =
+      value && typeof (value as Promise<string | null>).then === "function"
+        ? await value
+        : value;
+    if (typeof resolved === "string") {
+      return resolved.trim();
+    }
+    if (resolved && typeof resolved === "object") {
+      const record = resolved as { value?: unknown; secret?: unknown };
+      if (typeof record.value === "string") {
+        return record.value.trim();
+      }
+      if (typeof record.secret === "string") {
+        return record.secret.trim();
+      }
+    }
+    return "";
+  }
+  
+  // Fetches the API keys from secret storage
+  private async getCurrentsApiKey(): Promise<string> {
+    return this.getSecretValue(this.settings.currentsApiKey);
+  }
+
+  private async getFinnhubApiKey(): Promise<string> {
+    return this.getSecretValue(this.settings.finnhubApiKey);
+  }
+
+  // Notifies the user if a secret is missing, but only once per secret to avoid spamming
+  private notifyMissingSecret(
+    providerLabel: "Currents" | "Finnhub",
+    secretName: string
+  ) {
+    const trimmed = secretName.trim();
+    if (!trimmed) {
+      return;
+    }
+    const noticeKey = `${providerLabel}:${trimmed}`;
+    if (this.missingSecretNotices.has(noticeKey)) {
+      return;
+    }
+    this.missingSecretNotices.add(noticeKey);
+    new Notice(
+      `${providerLabel} secret "${trimmed}" not found. Re-select it in Settings.`
+    );
+  }
 
   // Builds a cache key for the headlines based on the current settings, used to determine if cached data can be reused
 	private buildHeadlinesCacheKey(resolvedLimit: number) {
@@ -652,8 +726,9 @@ export default class GlobalTicker extends Plugin {
   // Fetches headlines from the Currents API based on the current settings and resolved limit
   // The settings here are used to build the request parameters
   private async fetchHeadlinesFromApi(resolvedLimit: number): Promise<HeadlineItem[]> {
-    const apiKey = this.settings.currentsApiKey.trim();
+    const apiKey = await this.getCurrentsApiKey();
     if (!apiKey) {
+      this.notifyMissingSecret("Currents", this.settings.currentsApiKey);
       return [];
 		}
 
@@ -756,8 +831,9 @@ export default class GlobalTicker extends Plugin {
 	}
 
 	private async fetchStockQuotesFromApi(symbols: string[]): Promise<StockQuote[]> {
-		const apiKey = this.settings.finnhubApiKey.trim();
+		const apiKey = await this.getFinnhubApiKey();
 		if (!apiKey) {
+      this.notifyMissingSecret("Finnhub", this.settings.finnhubApiKey);
 			return [];
 		}
 
@@ -777,6 +853,7 @@ export default class GlobalTicker extends Plugin {
     const resolvedLimit = Number.isFinite(this.settings.currentsLimit)
       ? Math.min(50, Math.max(1, Math.floor(this.settings.currentsLimit)))
       : 3;
+    const currentsApiKey = await this.getCurrentsApiKey();
 		const cacheKey = this.buildHeadlinesCacheKey(resolvedLimit);
 		const cache = this.headlinesCache;
 		const cacheMatches = cache?.cacheKey === cacheKey;
@@ -792,12 +869,13 @@ export default class GlobalTicker extends Plugin {
     const cacheUsable =
       cacheFresh &&
       Boolean(cache?.headlines.length) &&
-      (cacheHasUrls || !this.settings.currentsApiKey.trim());
+      (cacheHasUrls || !currentsApiKey);
     if (!forceRefresh && cacheUsable && cache?.headlines.length) {
       return cache.headlines.slice(0, resolvedLimit);
     }
 
-    if (!this.settings.currentsApiKey.trim()) {
+    if (!currentsApiKey) {
+      this.notifyMissingSecret("Currents", this.settings.currentsApiKey);
       return FALLBACK_HEADLINES.slice(0, resolvedLimit);
 		}
 
@@ -851,8 +929,9 @@ export default class GlobalTicker extends Plugin {
 			return [];
 		}
 
-		const apiKey = this.settings.finnhubApiKey.trim();
+		const apiKey = await this.getFinnhubApiKey();
 		if (!apiKey) {
+      this.notifyMissingSecret("Finnhub", this.settings.finnhubApiKey);
 			return [];
 		}
 
