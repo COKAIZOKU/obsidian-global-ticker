@@ -18,12 +18,13 @@ export interface CurrentsHeadline {
   country?: string;
 }
 
-interface CurrentsApiSuccessResponse {
+
+interface CurrentsApiSuccessResponse { // for successful responses with status "ok"
   status: "ok";
   news: CurrentsHeadline[];
 }
 
-interface CurrentsApiErrorResponse {
+interface CurrentsApiErrorResponse { // for non-2xx responses or error status
   status: "error";
   message?: string;
   code?: string;

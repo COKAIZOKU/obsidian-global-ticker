@@ -458,7 +458,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         });
 
         const descCurrentsKey = createFragment();
-        descCurrentsKey.appendText('Used to fetch live headlines. Get the free Currents API key by creating an account ');
+        descCurrentsKey.appendText('Used to fetch live headlines. Get a free Currents API key by creating an account ');
         descCurrentsKey.appendChild(createEl('a', {
             text: 'here',
             href: 'https://currentsapi.services/'
@@ -683,7 +683,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         });
 
         const descFinnhubKey = createFragment();
-        descFinnhubKey.appendText('Used to fetch stocks data. Get the free Finnhub API key by creating an account ');
+        descFinnhubKey.appendText('Used to fetch stocks data. Get a free Finnhub API key by creating an account ');
         descFinnhubKey.appendChild(createEl('a', {
             text: 'here',
             href: 'https://finnhub.io'

@@ -8,12 +8,12 @@ export interface StockQuote {
   changePercent?: number;
 }
 
-interface FinnhubQuoteResponse {
+interface FinnhubQuoteResponse { // for successful quote responses
   c?: number | string;
   pc?: number | string;
 }
 
-interface FinnhubErrorResponse {
+interface FinnhubErrorResponse { // for error responses
   error?: string;
 }
 
@@ -22,6 +22,7 @@ export interface FetchFinnhubStockQuotesOptions {
   symbols: string[];
 }
 
+// Normalizes a value to a finite number if possible, otherwise returns undefined
 const normalizeNumber = (value: unknown): number | undefined => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -56,6 +57,7 @@ export const normalizeStockSymbols = (input: string): string[] => {
   return unique;
 };
 
+// Builds the URL for fetching a stock quote from Finnhub based on the symbol and API key
 const buildQuoteUrl = (symbol: string, apiKey: string): string => {
   const query = new URLSearchParams();
   query.set("symbol", symbol);
@@ -87,6 +89,7 @@ const toStockQuoteFromQuote = (
   };
 };
 
+// Fetches stock quotes for the given symbols using the Finnhub API and returns an array of StockQuote objects
 export async function fetchFinnhubStockQuotes(
   options: FetchFinnhubStockQuotesOptions
 ): Promise<StockQuote[]> {

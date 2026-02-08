@@ -1,5 +1,7 @@
 import type { App, BaseComponent } from "obsidian";
 
+// Provides type definitions for Obsidian's SecretStorage API 
+// This module extends the existing Obsidian types to include the SecretStorage interface and related components
 declare module "obsidian" {
   interface SecretStorage {
     get(key: string): string | null | Promise<string | null>;
