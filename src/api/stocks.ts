@@ -146,10 +146,6 @@ export async function fetchFinnhubStockQuotes(
     if (result.status === "fulfilled") {
       return result.value;
     }
-    console.warn("Failed to fetch Finnhub quote.", {
-      symbol,
-      error: result.reason,
-    });
     return { symbol };
   });
 }
