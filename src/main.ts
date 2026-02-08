@@ -909,7 +909,27 @@ export default class GlobalTicker extends Plugin {
 
   // Refresh headlines section, clears cache and re-fetches data, then updates all open panels
 	async refreshHeadlines() {
-		await this.getHeadlines({ forceRefresh: true, showNotice: true });
+    const resolvedLimit = Number.isFinite(this.settings.currentsLimit)
+      ? Math.min(50, Math.max(1, Math.floor(this.settings.currentsLimit)))
+      : 3;
+    const cacheKey = this.buildHeadlinesCacheKey(resolvedLimit);
+    let refreshed = false;
+
+    try {
+      const headlines = await this.fetchHeadlinesFromApi(resolvedLimit);
+      if (headlines.length > 0) {
+        this.headlinesCache = {
+          cacheKey,
+          fetchedAt: Date.now(),
+          headlines,
+        };
+        await this.savePluginData();
+        refreshed = true;
+      }
+    } catch (error) {
+      console.error("Failed to fetch Currents headlines", error);
+      new Notice("Failed to fetch Currents headlines. Showing cached items.");
+    }
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		await Promise.all(
 			leaves.map(async (leaf) => {
@@ -919,6 +939,7 @@ export default class GlobalTicker extends Plugin {
 				}
 			})
 		);
+    return refreshed;
 	}
 
   // Main function to get stock quotes, handles caching logic and fallback scenarios
@@ -970,7 +991,26 @@ export default class GlobalTicker extends Plugin {
   // Refresh stocks section, clears cache and re-fetches data, then updates all open panels
 	async refreshStocks() {
 		this.stockQuotesCache = null;
-		await this.getStockQuotes({ forceRefresh: true });
+    const symbols = normalizeStockSymbols(this.settings.finnhubSymbols);
+    if (symbols.length === 0) {
+      return false;
+    }
+
+    const cacheKey = this.buildStockCacheKey(symbols);
+    let refreshed = false;
+    try {
+      const quotes = await this.fetchStockQuotesFromApi(symbols);
+      if (quotes.length > 0) {
+        this.stockQuotesCache = {
+          cacheKey,
+          fetchedAt: Date.now(),
+          quotes,
+        };
+        refreshed = true;
+      }
+    } catch (error) {
+      console.error("Failed to fetch Finnhub stock quotes", error);
+    }
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
 		await Promise.all(
 			leaves.map(async (leaf) => {
@@ -980,6 +1020,7 @@ export default class GlobalTicker extends Plugin {
 				}
 			})
 		);
+    return refreshed;
 	}
 
   // Refreshes all open panels, re-rendering their content

@@ -458,8 +458,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         });
 
         const descCurrentsKey = createFragment();
-        descCurrentsKey.appendText('Used to fetch live headlines, without it you will only see placeholder headlines' +
-                '. Select a secret from SecretStorage. Get the free Currents API key by creating an account ');
+        descCurrentsKey.appendText('Used to fetch live headlines. Get the free Currents API key by creating an account ');
         descCurrentsKey.appendChild(createEl('a', {
             text: 'here',
             href: 'https://currentsapi.services/'
@@ -658,13 +657,17 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         button.setDisabled(true);
                         button.setButtonText("Refreshing...");
                         try {
-                            await this
+                            const refreshed = await this
                                 .plugin
                                 .refreshHeadlines();
-                            new Notice("Headlines refreshed.");
+                            if (refreshed) {
+                                new Notice("Headlines refreshed.");
+                            } else {
+                                new Notice("No headlines refreshed. Check your API key, limit or connection.");
+                            }
                         } catch (error) {
                             console.error("Failed to refresh headlines", error);
-                            new Notice("Failed to refresh headlines. Check your API key and connection.");
+                            new Notice("Failed to refresh headlines. Check your API key, limit or connection.");
                         } finally {
                             button.setDisabled(false);
                             button.setButtonText("Refresh");
@@ -680,8 +683,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         });
 
         const descFinnhubKey = createFragment();
-        descFinnhubKey.appendText('Used to fetch stocks data. without it you will only see placeholder stocks data.' +
-                ' Select a secret from SecretStorage. Get the free Finnhub API key by creating an account ');
+        descFinnhubKey.appendText('Used to fetch stocks data. Get the free Finnhub API key by creating an account ');
         descFinnhubKey.appendChild(createEl('a', {
             text: 'here',
             href: 'https://finnhub.io'
@@ -815,13 +817,17 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         button.setDisabled(true);
                         button.setButtonText("Refreshing...");
                         try {
-                            await this
+                            const refreshed = await this
                                 .plugin
                                 .refreshStocks();
-                            new Notice("Stocks data refreshed.");
+                            if (refreshed) {
+                                new Notice("Stocks data refreshed.");
+                            } else {
+                                new Notice("No stocks data refreshed. Check your Finnhub API key, limit or connection.");
+                            }
                         } catch (error) {
                             console.error("Failed to refresh stocks data", error);
-                            new Notice("Failed to refresh stocks data. Check your Finnhub API key and connection.");
+                            new Notice("Failed to refresh stocks data. Check your Finnhub API key, limit or connection.");
                         } finally {
                             button.setDisabled(false);
                             button.setButtonText("Refresh");
