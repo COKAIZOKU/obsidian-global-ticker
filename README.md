@@ -1,4 +1,4 @@
-# Global Ticker Plugin for Obsidian
+# Global Ticker for Obsidian
 
 The **Global Ticker** plugin adds two useful info bars: a top ticker for headline news and a bottom ticker for stock market updates, and it’s all super customizable to your liking! The APIs were picked from the [try Public APIs for free](https://github.com/public-apis/public-apis) repo.
 
