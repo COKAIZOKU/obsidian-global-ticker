@@ -11,7 +11,7 @@ General settings found are:
 - **Speed:** Controls the scrolling speed. There are 4 options available: super slow, slow, medium, and fast.
 - **Direction:** Sets scrolling direction to left or right.
 - **Refresh**: Refresh and fetch information using the individual buttons in each section's settings. There is also an option to refresh headlines and stocks every time Obsidian starts.
-- **Footer:** Both tickers have a separate footers that can be shown or hidden. On the left, it displays the last refresh time, with the option to use either dd/mm/yy or mm/dd/yy format. On the right, it includes a button to fetch data without having to open the settings. 
+- **Footer:** Both tickers have a separate footers that can be shown or hidden. On the left, it displays the last refresh time, with the option to use either `dd/mm/yy` or `mm/dd/yy` format. On the right, it includes a button to fetch data without having to open the settings. 
 
 ### News Ticker: Currents
 
@@ -34,3 +34,6 @@ The stocks ticker uses the [Finnhub API](https://finnhub.io/) to retrieve global
 - `Symbol:` Select the stock symbols to show. To see which symbols are supported, refer to `/v1/stock/symbol`, which includes a large list of available options.
 - **Color:** The price color and the colors for both negative and positive percentage changes are customizable using hex color values.
 
+## Cache
+
+Currently, both the news ticker and the stock ticker have persistent cache stored on the plugin's data disk. This allows the last fetched data for both tickers to be displayed even when offline or after failed fetches. 
