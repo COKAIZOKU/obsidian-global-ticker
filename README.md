@@ -2,7 +2,7 @@
 
 The **Global Ticker** plugin adds two useful info bars: a top ticker for headline news and a bottom ticker for stock market updates, and it’s all super customizable to your liking! The APIs were picked from the [try Public APIs for free](https://github.com/public-apis/public-apis) repo.
 
-![cover](https://github.com/user-attachments/assets/c01801ab-822c-4913-adc8-2ee795841c56)
+![cover](https://github.com/user-attachments/assets/963d00b8-5b7b-4b93-b1ba-f92cddf849ae)
 
 **To use this plugin, you’ll need to register for both APIs to get the data** (they're free!). If that’s not something you’re comfortable with, this plugin might not be for you. The [Obsidian HackerNews](https://github.com/arpitbbhayani/obsidian-hackernews) and [Get Stock Information](https://github.com/mikejongbloet/obsidian-get-stock-information) plugins may be more up your alley, since they don't require registration.
 
