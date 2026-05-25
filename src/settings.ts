@@ -408,6 +408,57 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
     display() : void {
         const {containerEl} = this;
+        const saveSettingsOnly = async() => {
+            await this.plugin.saveSettings();
+        };
+        const saveSettingsAndRefreshPanels = async() => {
+            await this.plugin.saveSettings();
+            await this.plugin.refreshPanels();
+        };
+        const saveSettingsAndUpdateTickerSettings = async() => {
+            await this.plugin.saveSettings();
+            this.plugin.updateTickerSettings();
+        };
+        const saveSettingsAndUpdateTickerColors = async() => {
+            await this.plugin.saveSettings();
+            this.plugin.updateTickerColors();
+        };
+        const addTickerSpeedAndDirectionSetting = (
+            name: string,
+            desc: string,
+            speedValue: TickerSpeed,
+            directionValue: TickerDirection,
+            onSpeedChange: (value: TickerSpeed) => Promise<void>,
+            onDirectionChange: (value: TickerDirection) => Promise<void>
+        ) => {
+            const setting = new Setting(containerEl)
+                .setName(name)
+                .setDesc(desc);
+
+            setting
+                .addDropdown(dropdown => dropdown
+                    .addOption("very-slow", "Very slow")
+                    .addOption("slow", "Slow")
+                    .addOption("medium", "Medium")
+                    .addOption("fast", "Fast")
+                    .setValue(speedValue)
+                    .onChange((value) => {
+                        if (value !== "very-slow" && value !== "slow" && value !== "medium" && value !== "fast") {
+                            return;
+                        }
+                        void onSpeedChange(value);
+                    }))
+                .addDropdown(dropdown => dropdown
+                    .addOption("left", "Left")
+                    .addOption("right", "Right")
+                    .setValue(directionValue)
+                    .onChange((value) => {
+                        if (value !== "left" && value !== "right") {
+                            return;
+                        }
+                        void onDirectionChange(value);
+                    }));
+        };
 
         containerEl.empty();
 
@@ -433,12 +484,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                                 return;
                             }
                             this.plugin.settings.tickerDisplayMode = value;
-                            await this
-                                .plugin
-                                .saveSettings();
-                            await this
-                                .plugin
-                                .refreshPanels();
+                            await saveSettingsAndRefreshPanels();
                         })();
                     });
             });
@@ -456,12 +502,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.useUsDateFormat = value === "mdy";
-                            await this
-                                .plugin
-                                .saveSettings();
-                            await this
-                                .plugin
-                                .refreshPanels();
+                            await saveSettingsAndRefreshPanels();
                         })();
                     });
             });
@@ -475,9 +516,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.refreshOnAppOpen = value;
-                            await this
-                                .plugin
-                                .saveSettings();
+                            await saveSettingsOnly();
                         })();
                     });
             });
@@ -505,9 +544,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     void (async() => {
                         const normalized = (value ?? "").trim();
                         this.plugin.settings.currentsApiKey = normalized;
-                        await this
-                            .plugin
-                            .saveSettings();
+                        await saveSettingsOnly();
                     })();
                 }));
 
@@ -524,9 +561,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addTextArea(text => text.setPlaceholder('Science, food').setValue(this.plugin.settings.currentsCategory).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.currentsCategory = value.trim();
-                    await this
-                        .plugin
-                        .saveSettings();
+                    await saveSettingsOnly();
                 })();
             }));
         const descDomains = createLinkFragment(
@@ -542,9 +577,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(this.plugin.settings.currentsDomains).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.currentsDomains = value.trim();
-                    await this
-                        .plugin
-                        .saveSettings();
+                    await saveSettingsOnly();
                 })();
             }));
 
@@ -554,9 +587,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(this.plugin.settings.currentsExcludeDomains).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.currentsExcludeDomains = value.trim();
-                    await this
-                        .plugin
-                        .saveSettings();
+                    await saveSettingsOnly();
                 })();
             }));
 
@@ -572,9 +603,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.currentsRegion = value;
-                            await this
-                                .plugin
-                                .saveSettings();
+                            await saveSettingsOnly();
                         })();
                     });
             });
@@ -591,9 +620,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.currentsLanguage = value;
-                            await this
-                                .plugin
-                                .saveSettings();
+                            await saveSettingsOnly();
                         })();
                     });
             });
@@ -618,43 +645,25 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                             const clamped = Math.min(10, Math.max(1, parsed));
                             this.plugin.settings.currentsLimit = clamped;
                             text.setValue(String(clamped));
-                            await this
-                                .plugin
-                                .saveSettings();
+                            await saveSettingsOnly();
                         })();
                     });
             });
 
-        const settingNewsDirectionSpeed = new Setting(containerEl)
-            .setName("News ticker speed and direction")
-            .setDesc("Choose how fast the news ticker scrolls and its direction.");
-        settingNewsDirectionSpeed.addDropdown(dropdown => dropdown.addOption("very-slow", "Very slow").addOption("slow", "Slow").addOption("medium", "Medium").addOption("fast", "Fast").setValue(this.plugin.settings.newsTickerSpeed).onChange((value) => {
-            if (value !== "very-slow" && value !== "slow" && value !== "fast" && value !== "medium") {
-                return;
-            }
-            void (async() => {
+        addTickerSpeedAndDirectionSetting(
+            "News ticker speed and direction",
+            "Choose how fast the news ticker scrolls and its direction.",
+            this.plugin.settings.newsTickerSpeed,
+            this.plugin.settings.newsTickerDirection,
+            async(value) => {
                 this.plugin.settings.newsTickerSpeed = value;
-                await this
-                    .plugin
-                    .saveSettings();
-                this
-                    .plugin
-                    .updateTickerSettings();
-            })();
-        })).addDropdown(dropdown => dropdown.addOption("left", "Left").addOption("right", "Right").setValue(this.plugin.settings.newsTickerDirection).onChange((value) => {
-            if (value !== "left" && value !== "right") {
-                return;
-            }
-            void (async() => {
+                await saveSettingsAndUpdateTickerSettings();
+            },
+            async(value) => {
                 this.plugin.settings.newsTickerDirection = value;
-                await this
-                    .plugin
-                    .saveSettings();
-                this
-                    .plugin
-                    .updateTickerSettings();
-            })();
-        }));
+                await saveSettingsAndUpdateTickerSettings();
+            }
+        );
 
         new Setting(containerEl)
             .setName("Show news footer")
@@ -665,12 +674,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.showNewsFooter = value;
-                            await this
-                                .plugin
-                                .saveSettings();
-                            await this
-                                .plugin
-                                .refreshPanels();
+                            await saveSettingsAndRefreshPanels();
                         })();
                     });
             });
@@ -683,12 +687,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.showHeadlineMeta = value;
-                            await this
-                                .plugin
-                                .saveSettings();
-                            await this
-                                .plugin
-                                .refreshPanels();
+                            await saveSettingsAndRefreshPanels();
                         })();
                     });
             });
@@ -747,9 +746,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     void (async() => {
                         const normalized = (value ?? "").trim();
                         this.plugin.settings.finnhubApiKey = normalized;
-                        await this
-                            .plugin
-                            .saveSettings();
+                        await saveSettingsOnly();
                     })();
                 }));
 
@@ -760,9 +757,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addTextArea(text => text.setPlaceholder('Aapl, msft, tsla').setValue(this.plugin.settings.finnhubSymbols).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.finnhubSymbols = value;
-                    await this
-                        .plugin
-                        .saveSettings();
+                    await saveSettingsOnly();
                 })();
             }));
 
@@ -779,12 +774,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addText(text => text.setPlaceholder('#a68af6').setValue(this.plugin.settings.stockChangeColor).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.stockChangeColor = value.trim();
-                    await this
-                        .plugin
-                        .saveSettings();
-                    this
-                        .plugin
-                        .updateTickerColors();
+                    await saveSettingsAndUpdateTickerColors();
                 })();
             }));
 
@@ -794,12 +784,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addText(text => text.setPlaceholder('#fb464c').setValue(this.plugin.settings.stockChangeNegativeColor).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.stockChangeNegativeColor = value.trim();
-                    await this
-                        .plugin
-                        .saveSettings();
-                    this
-                        .plugin
-                        .updateTickerColors();
+                    await saveSettingsAndUpdateTickerColors();
                 })();
             }));
 
@@ -809,45 +794,23 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .addText(text => text.setPlaceholder('#666666').setValue(this.plugin.settings.stockPriceColor).onChange((value) => {
                 void (async() => {
                     this.plugin.settings.stockPriceColor = value.trim();
-                    await this
-                        .plugin
-                        .saveSettings();
-                    this
-                        .plugin
-                        .updateTickerColors();
+                    await saveSettingsAndUpdateTickerColors();
                 })();
             }));
-        const settingStockDirectionSpeed = new Setting(containerEl)
-            .setName("Stocks ticker speed and direction")
-            .setDesc("Choose how fast the stocks ticker scrolls and its direction.");
-
-        settingStockDirectionSpeed.addDropdown(dropdown => dropdown.addOption("very-slow", "Very slow").addOption("slow", "Slow").addOption("medium", "Medium").addOption("fast", "Fast").setValue(this.plugin.settings.stockTickerSpeed).onChange((value) => {
-            if (value !== "very-slow" && value !== "slow" && value !== "fast" && value !== "medium") {
-                return;
-            }
-            void (async() => {
+        addTickerSpeedAndDirectionSetting(
+            "Stocks ticker speed and direction",
+            "Choose how fast the stocks ticker scrolls and its direction.",
+            this.plugin.settings.stockTickerSpeed,
+            this.plugin.settings.stockTickerDirection,
+            async(value) => {
                 this.plugin.settings.stockTickerSpeed = value;
-                await this
-                    .plugin
-                    .saveSettings();
-                this
-                    .plugin
-                    .updateTickerSettings();
-            })();
-        })).addDropdown(dropdown => dropdown.addOption("left", "Left").addOption("right", "Right").setValue(this.plugin.settings.stockTickerDirection).onChange((value) => {
-            if (value !== "left" && value !== "right") {
-                return;
-            }
-            void (async() => {
+                await saveSettingsAndUpdateTickerSettings();
+            },
+            async(value) => {
                 this.plugin.settings.stockTickerDirection = value;
-                await this
-                    .plugin
-                    .saveSettings();
-                this
-                    .plugin
-                    .updateTickerSettings();
-            })();
-        }));
+                await saveSettingsAndUpdateTickerSettings();
+            }
+        );
 
         new Setting(containerEl)
             .setName("Show stocks footer")
@@ -858,12 +821,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     .onChange((value) => {
                         void (async() => {
                             this.plugin.settings.showStockFooter = value;
-                            await this
-                                .plugin
-                                .saveSettings();
-                            await this
-                                .plugin
-                                .refreshPanels();
+                            await saveSettingsAndRefreshPanels();
                         })();
                     });
             });
