@@ -66,6 +66,26 @@ const toQueryString = (
   return `?${query}`;
 };
 
+const getPayloadMessageSuffix = (
+  payload: CurrentsApiResponse | null | undefined
+): string => {
+  if (payload && "message" in payload && payload.message) {
+    return `: ${payload.message}`;
+  }
+
+  return "";
+};
+
+const isSuccessPayload = (
+  payload: CurrentsApiResponse | null | undefined
+): payload is CurrentsApiSuccessResponse => {
+  if (!payload || payload.status !== "ok") {
+    return false;
+  }
+
+  return Array.isArray(payload.news);
+};
+
 export async function fetchCurrentsHeadlines(
   options: FetchCurrentsHeadlinesOptions
 ): Promise<CurrentsHeadline[]> {
@@ -126,18 +146,12 @@ export async function fetchCurrentsHeadlines(
   const payload = response.json as CurrentsApiResponse;
 
   if (response.status >= 400) {
-    const message =
-      payload && "message" in payload && payload.message
-        ? `: ${payload.message}`
-        : "";
+    const message = getPayloadMessageSuffix(payload);
     throw new Error(`Currents API request failed (${response.status})${message}`);
   }
 
-  if (!payload || payload.status !== "ok" || !Array.isArray(payload.news)) {
-    const details =
-      payload && "message" in payload && payload.message
-        ? `: ${payload.message}`
-        : "";
+  if (!isSuccessPayload(payload)) {
+    const details = getPayloadMessageSuffix(payload);
     throw new Error(`Unexpected Currents API response${details}`);
   }
 
