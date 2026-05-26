@@ -73,7 +73,7 @@ export function initTicker(root: ParentNode = document): void {
     }
 
     // Enable nowrap sizing but pause animation until clones are ready.
-    scroller.setAttribute("data-animated", "true");
+    scroller.dataset.animated = "true";
     scroller.setCssProps({ "--_animation-play-state": "paused" });
 
     // Make an array from the elements within `.scroller__inner`.
@@ -88,7 +88,7 @@ export function initTicker(root: ParentNode = document): void {
       items.forEach((item) => {
         const duplicatedItem = item.cloneNode(true) as HTMLElement;
         duplicatedItem.setAttribute("aria-hidden", "true");
-        duplicatedItem.setAttribute("data-ticker-clone", "true");
+        duplicatedItem.dataset.tickerClone = "true";
         scrollerInner.appendChild(duplicatedItem);
       });
     };
@@ -98,7 +98,7 @@ export function initTicker(root: ParentNode = document): void {
       Array.from(scrollerInner.children).forEach((child) => {
         const el = child as HTMLElement;
         if (
-          el.getAttribute("data-ticker-clone") === "true" ||
+          el.dataset.tickerClone === "true" ||
           el.getAttribute("aria-hidden") === "true"
         ) {
           el.remove();
@@ -171,7 +171,7 @@ export function initTicker(root: ParentNode = document): void {
     // After rebuilding the clones and recalculating the loop distance the animation needs to be restarted
     const restartAnimation = () => {
       scrollerInner.classList.add("is-restarting");
-      void scrollerInner.offsetHeight;
+      scrollerInner.getBoundingClientRect();
       scrollerInner.classList.remove("is-restarting");
     };
 
