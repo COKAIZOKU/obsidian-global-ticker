@@ -651,11 +651,11 @@ export default class GlobalTicker extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('rss', 'Open global ticker', () => {
+		this.addRibbonIcon('rss', 'Open global ticker', async () => {
 			// Called when the user clicks the icon.
 			const leaf = this.app.workspace.getLeaf(true);
-			void leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
-			void this.app.workspace.revealLeaf(leaf);
+			await leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
+			await this.app.workspace.revealLeaf(leaf);
 		});
 
 		// This adds a view to the workspace, which can be opened via the command palette, ribbon icon, or programmatically.
@@ -679,10 +679,10 @@ export default class GlobalTicker extends Plugin {
 		this.addCommand({
 			id: 'open-panel',
 			name: 'Open panel',
-			callback: () => {
+			callback: async () => {
 				const leaf = this.app.workspace.getLeaf(true);
-				void leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
-				void this.app.workspace.revealLeaf(leaf);
+				await leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
+				await this.app.workspace.revealLeaf(leaf);
 			}
 		});
 
@@ -692,15 +692,13 @@ export default class GlobalTicker extends Plugin {
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 
-		this.app.workspace.onLayoutReady(() => {
+		this.app.workspace.onLayoutReady(async () => {
 			if (this.settings.refreshOnAppOpen) {
-				void this.refreshOnAppOpen();
+				await this.refreshOnAppOpen();
 			}
 		});
 	}
 
-	onunload() {
-	}
   // Fetches the value of a secret from Obsidian's SecretStorage
   private async getSecretValue(secretName: string): Promise<string> {
     const trimmed = secretName.trim();
