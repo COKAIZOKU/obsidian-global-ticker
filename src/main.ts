@@ -362,8 +362,8 @@ class MyPanelView extends ItemView {
     speed: TickerSpeed,
     direction: TickerDirection
   ) {
-    scroller.setAttribute("data-speed", speed);
-    scroller.setAttribute("data-direction", direction);
+    scroller.dataset.speed = speed;
+    scroller.dataset.direction = direction;
     applyTickerSpeed(scroller);
   }
 
@@ -439,9 +439,9 @@ class MyPanelView extends ItemView {
   private async renderNewsSection(section: HTMLElement) {
     section.empty();
     const scroller = section.createDiv({ cls: "scroller" });
-    scroller.setAttribute("data-ticker", "news");
-    scroller.setAttribute("data-speed", this.newsSpeed);
-    scroller.setAttribute("data-direction", this.newsDirection);
+    scroller.dataset.ticker = "news";
+    scroller.dataset.speed = this.newsSpeed;
+    scroller.dataset.direction = this.newsDirection;
 
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
     await this.loadHeadlines(list);
@@ -452,9 +452,9 @@ class MyPanelView extends ItemView {
   private async renderStocksSection(section: HTMLElement): Promise<number | null> {
     section.empty();
     const stockScroller = section.createDiv({ cls: "scroller" });
-    stockScroller.setAttribute("data-ticker", "stock");
-    stockScroller.setAttribute("data-speed", this.stockSpeed);
-    stockScroller.setAttribute("data-direction", this.stockDirection);
+    stockScroller.dataset.ticker = "stock";
+    stockScroller.dataset.speed = this.stockSpeed;
+    stockScroller.dataset.direction = this.stockDirection;
 
     const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner", "stock-list"] });
     const quotes = await this.plugin.getStockQuotes();
