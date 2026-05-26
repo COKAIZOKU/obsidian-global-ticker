@@ -69,6 +69,26 @@ const normalizeDomains = (input: string): string[] => {
     .filter(Boolean);
 };
 
+const toNonEmptyTrimmedString = (value: unknown): string | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const normalizeHeadlineCategory = (value: unknown): string | string[] | undefined => {
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+      .filter(Boolean);
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  return toNonEmptyTrimmedString(value);
+};
+
 // Normalizes different headline and formats into a consistent structure used internally
 const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
   if (!item) {
@@ -76,42 +96,42 @@ const normalizeHeadlineItem = (item: unknown): HeadlineItem | null => {
   }
 
   if (typeof item === "string") {
-    const title = item.trim();
+    const title = toNonEmptyTrimmedString(item);
     return title ? { title } : null;
   }
 
-  if (typeof item === "object") {
-    const record = item as {
-      title?: unknown;
-      url?: unknown;
-      source?: unknown;
-      category?: unknown;
-    };
-    const title = typeof record.title === "string" ? record.title.trim() : "";
-    if (!title) {
-      return null;
-    }
-    const url = typeof record.url === "string" ? record.url.trim() : undefined;
-    const source =
-      typeof record.source === "string" ? record.source.trim() : undefined;
-    const category = Array.isArray(record.category)
-      ? record.category
-          .map((value) => (typeof value === "string" ? value.trim() : ""))
-          .filter(Boolean)
-      : typeof record.category === "string"
-        ? record.category.trim()
-        : undefined;
-    return {
-      title,
-      ...(url ? { url } : {}),
-      ...(source ? { source } : {}),
-      ...(category && (Array.isArray(category) ? category.length > 0 : category)
-        ? { category }
-        : {}),
-    };
+  if (typeof item !== "object") {
+    return null;
   }
 
-  return null;
+  const record = item as {
+    title?: unknown;
+    url?: unknown;
+    source?: unknown;
+    category?: unknown;
+  };
+
+  const title = toNonEmptyTrimmedString(record.title);
+  if (!title) {
+    return null;
+  }
+
+  const normalized: HeadlineItem = { title };
+  const url = toNonEmptyTrimmedString(record.url);
+  const source = toNonEmptyTrimmedString(record.source);
+  const category = normalizeHeadlineCategory(record.category);
+
+  if (url) {
+    normalized.url = url;
+  }
+  if (source) {
+    normalized.source = source;
+  }
+  if (category) {
+    normalized.category = category;
+  }
+
+  return normalized;
 };
 
 // Gets source field, if not available tries to extract domain from url, if that fails returns null
