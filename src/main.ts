@@ -179,6 +179,8 @@ const formatChange = (value?: number): string => {
   return `${sign}${value.toFixed(2)}%`;
 };
 
+const pad2 = (value: number): string => (value < 10 ? `0${value}` : String(value));
+
 // Formats the timestamp of the footer
 const formatLastRefreshed = (
   timestamp?: number | null,
@@ -188,11 +190,11 @@ const formatLastRefreshed = (
     return "Last refreshed: ---";
   }
   const date = new Date(timestamp);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = pad2(date.getDate());
+  const month = pad2(date.getMonth() + 1);
   const year = String(date.getFullYear()).slice(-2);
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const hours = pad2(date.getHours());
+  const minutes = pad2(date.getMinutes());
   const formatted = useUsDateFormat
     ? `${month}/${day}/${year}`
     : `${day}/${month}/${year}`;
@@ -239,11 +241,14 @@ const normalizeStockQuoteItem = (item: unknown): StockQuote | null => {
   }
   const price = normalizeStockQuoteNumber(record.price);
   const changePercent = normalizeStockQuoteNumber(record.changePercent);
-  return {
-    symbol,
-    ...(price !== undefined ? { price } : {}),
-    ...(changePercent !== undefined ? { changePercent } : {}),
-  };
+  const normalized: StockQuote = { symbol };
+  if (price !== undefined) {
+    normalized.price = price;
+  }
+  if (changePercent !== undefined) {
+    normalized.changePercent = changePercent;
+  }
+  return normalized;
 };
 
 // Cache for headlines
@@ -269,7 +274,7 @@ interface PluginData {
 // The main view class for the panel
 class MyPanelView extends ItemView {
 
-  private plugin: GlobalTicker;
+  private readonly plugin: GlobalTicker;
 
   private newsSpeed: TickerSpeed;
   private stockSpeed: TickerSpeed;
@@ -642,10 +647,10 @@ class MyPanelView extends ItemView {
 // Main plugin class that Obsidian interacts with, handles loading, settings, commands and data fetching/caching
 export default class GlobalTicker extends Plugin {
 
-	settings: GlobalTickerSettings;
+	settings!: GlobalTickerSettings;
 	private headlinesCache: HeadlinesCache | null = null; 
 	private stockQuotesCache: StockQuotesCache | null = null;
-  private missingSecretNotices = new Set<string>(); 
+  private readonly missingSecretNotices = new Set<string>(); 
 
 	async onload() {
 		await this.loadSettings();
