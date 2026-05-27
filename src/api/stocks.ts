@@ -136,15 +136,18 @@ export async function fetchFinnhubStockQuotes(
     );
   };
 
-  const results = await Promise.allSettled(
-    symbols.map((symbol) => requestQuote(symbol))
+  const results = await Promise.all(
+    symbols.map(async (symbol) => {
+      try {
+        const quote = await requestQuote(symbol);
+        return { status: "fulfilled" as const, value: quote };
+      } catch {
+        return { status: "rejected" as const, symbol };
+      }
+    })
   );
 
-  return results.map((result, index) => {
-    const symbol = symbols[index] ?? "";
-    if (result.status === "fulfilled") {
-      return result.value;
-    }
-    return { symbol };
-  });
+  return results.map((result) =>
+    result.status === "fulfilled" ? result.value : { symbol: result.symbol }
+  );
 }

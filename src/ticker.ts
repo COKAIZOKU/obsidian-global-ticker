@@ -41,14 +41,14 @@ export function applyTickerSpeed(scroller: HTMLElement): void {
   }
 
   const speedKey = scroller.dataset.speed ?? "medium";
-  const speedPxPerSec = 
-    speedKey === "fast"
-      ? 120
-      : speedKey === "slow"
-        ? 40
-        : speedKey === "very-slow"
-          ? 20
-          : 80;
+  let speedPxPerSec = 80;
+  if (speedKey === "fast") {
+    speedPxPerSec = 120;
+  } else if (speedKey === "slow") {
+    speedPxPerSec = 40;
+  } else if (speedKey === "very-slow") {
+    speedPxPerSec = 20;
+  }
   const duration = distance / speedPxPerSec;
   scroller.setCssProps({ "--_animation-duration": `${duration}s` });
 }
@@ -190,7 +190,7 @@ export function initTicker(root: ParentNode = document): void {
 
     // Use ResizeObserver if available for more efficient resizing
     // Otherwise fall back to window resize event
-    if (typeof ResizeObserver !== "undefined") {
+    if (typeof ResizeObserver === "function") {
       const observer = new ResizeObserver(() => {
         rebuild();
       });
