@@ -31,6 +31,8 @@ interface CurrentsApiErrorResponse { // for non-2xx responses or error status
 }
 
 type CurrentsApiResponse = CurrentsApiSuccessResponse | CurrentsApiErrorResponse;
+type CurrentsQueryParamValue = string | number | boolean | Array<string | number>;
+type CurrentsQueryParams = Record<string, CurrentsQueryParamValue>;
 
 export interface FetchCurrentsHeadlinesOptions {
   apiKey: string;
@@ -39,7 +41,7 @@ export interface FetchCurrentsHeadlinesOptions {
   language?: string;
   category?: string | string[];
   country?: string | string[];
-  params?: Record<string, string | number | boolean | Array<string | number>>;
+  params?: CurrentsQueryParams;
   limit?: number;
 }
 
@@ -47,7 +49,7 @@ const normalizeList = (value: string | string[]): string =>
   Array.isArray(value) ? value.filter(Boolean).join(",") : value;
 
 const toQueryString = (
-  params: Record<string, string | number | boolean | Array<string | number>>
+  params: CurrentsQueryParams
 ): string => {
   const queryParts: string[] = [];
 
@@ -111,11 +113,8 @@ export async function fetchCurrentsHeadlines(
     throw new Error("Currents API key is required.");
   }
 
-  const queryParams: Record<
-    string,
-    string | number | boolean | Array<string | number>
-  > = {
-    ...(params ?? {}),
+  const queryParams: CurrentsQueryParams = {
+    ...params,
   };
 
   if (language) {
