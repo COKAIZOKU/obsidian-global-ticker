@@ -49,21 +49,27 @@ const normalizeList = (value: string | string[]): string =>
 const toQueryString = (
   params: Record<string, string | number | boolean | Array<string | number>>
 ): string => {
-  const entries = Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "");
+  const queryParts: string[] = [];
 
-  if (entries.length === 0) {
+  for (const key in params) {
+    if (!Object.prototype.hasOwnProperty.call(params, key)) {
+      continue;
+    }
+
+    const value = params[key];
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+
+    const raw = Array.isArray(value) ? value.join(",") : String(value);
+    queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(raw)}`);
+  }
+
+  if (queryParts.length === 0) {
     return "";
   }
 
-  const query = entries
-    .map(([key, value]) => {
-      const raw = Array.isArray(value) ? value.join(",") : String(value);
-      return `${encodeURIComponent(key)}=${encodeURIComponent(raw)}`;
-    })
-    .join("&");
-
-  return `?${query}`;
+  return `?${queryParts.join("&")}`;
 };
 
 const getPayloadMessageSuffix = (
@@ -79,7 +85,7 @@ const getPayloadMessageSuffix = (
 const isSuccessPayload = (
   payload: CurrentsApiResponse | null | undefined
 ): payload is CurrentsApiSuccessResponse => {
-  if (!payload || payload.status !== "ok") {
+  if (payload?.status !== "ok") {
     return false;
   }
 
