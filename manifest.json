@@ -1,7 +1,7 @@
 {
 	"id": "global-ticker",
 	"name": "Global Ticker",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.11.5",
 	"description": "Adds a panel that provides a global ticker for news and stock updates, using Currents and Finnhub APIs.",
 	"author": "COKAIZOKU",
