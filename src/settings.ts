@@ -696,7 +696,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Headline underline text color')
-            .setDesc('Use any hex color.')
+            .setDesc('Select any color.')
             .addColorPicker(color => color.setValue(this.plugin.settings.newsTextColor || '#ffffff').onChange((value) => {
                 void (async() => {
                     this.plugin.settings.newsTextColor = value.trim();
@@ -785,42 +785,71 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                 })();
             }));
 
-        const descHexColors = createLinkFragment(
-            "Use any hex color, you can find hex colors ",
-            "here",
-            "https://htmlcolorcodes.com/",
-            ". Leave blank to use the theme default."
-        );
-
         new Setting(containerEl)
             .setName('Stocks positive change color')
-            .setDesc(descHexColors)
-            .addText(text => text.setPlaceholder('#a68af6').setValue(this.plugin.settings.stockChangeColor).onChange((value) => {
+            .setDesc('Select any color.')
+            .addColorPicker(color => color.setValue(this.plugin.settings.stockChangeColor || '#a68af6').onChange((value) => {
                 void (async() => {
                     this.plugin.settings.stockChangeColor = value.trim();
                     await saveSettingsAndUpdateTickerColors();
                 })();
-            }));
+            }))
+            .addExtraButton(button => {
+                button
+                    .setIcon('reset')
+                    .setTooltip('Use theme default')
+                    .onClick(() => {
+                        void (async() => {
+                            this.plugin.settings.stockChangeColor = "";
+                            await saveSettingsAndUpdateTickerColors();
+                            this.display();
+                        })();
+                    });
+            });
 
         new Setting(containerEl)
             .setName('Stocks negative change color')
-            .setDesc('Use any hex color. Leave blank to use the theme default.')
-            .addText(text => text.setPlaceholder('#fb464c').setValue(this.plugin.settings.stockChangeNegativeColor).onChange((value) => {
+            .setDesc('Select any color.')
+            .addColorPicker(color => color.setValue(this.plugin.settings.stockChangeNegativeColor || '#fb464c').onChange((value) => {
                 void (async() => {
                     this.plugin.settings.stockChangeNegativeColor = value.trim();
                     await saveSettingsAndUpdateTickerColors();
                 })();
-            }));
+            }))
+            .addExtraButton(button => {
+                button
+                    .setIcon('reset')
+                    .setTooltip('Use theme default')
+                    .onClick(() => {
+                        void (async() => {
+                            this.plugin.settings.stockChangeNegativeColor = "";
+                            await saveSettingsAndUpdateTickerColors();
+                            this.display();
+                        })();
+                    });
+            });
 
         new Setting(containerEl)
             .setName('Stocks price color')
-            .setDesc('Use any hex color. Leave blank to use the theme default.')
-            .addText(text => text.setPlaceholder('#666666').setValue(this.plugin.settings.stockPriceColor).onChange((value) => {
+            .setDesc('Select any color.')
+            .addColorPicker(color => color.setValue(this.plugin.settings.stockPriceColor || '#666666').onChange((value) => {
                 void (async() => {
                     this.plugin.settings.stockPriceColor = value.trim();
                     await saveSettingsAndUpdateTickerColors();
                 })();
-            }));
+            }))
+            .addExtraButton(button => {
+                button
+                    .setIcon('reset')
+                    .setTooltip('Use theme default')
+                    .onClick(() => {
+                        void (async() => {
+                            this.plugin.settings.stockPriceColor = "";
+                            await saveSettingsAndUpdateTickerColors();
+                            this.display();
+                        })();
+                    });
+            });
         addTickerSpeedAndDirectionSetting(
             "Stocks ticker speed and direction",
             "Choose how fast the stocks ticker scrolls and its direction.",
