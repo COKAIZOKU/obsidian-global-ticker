@@ -696,7 +696,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Headline underline text color')
-            .setDesc('Use any hex color. Leave blank to use the theme default.')
+            .setDesc('Use any hex color.')
             .addColorPicker(color => color.setValue(this.plugin.settings.newsTextColor || '#ffffff').onChange((value) => {
                 void (async() => {
                     this.plugin.settings.newsTextColor = value.trim();
