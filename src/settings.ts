@@ -24,6 +24,7 @@ export interface GlobalTickerSettings {
     tickerDisplayMode : TickerDisplayMode;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
+    newsTextColor : string;
     stockChangeColor : string;
     stockChangeNegativeColor : string;
     stockPriceColor : string;
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     refreshOnAppOpen: false,
     tickerDisplayMode: "both",
     showHeadlineMeta: true,
+    newsTextColor: "",
     stockChangeColor: "",
     stockChangeNegativeColor: "",
     stockPriceColor: "",
@@ -688,6 +690,28 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         void (async() => {
                             this.plugin.settings.showHeadlineMeta = value;
                             await saveSettingsAndRefreshPanels();
+                        })();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('Headline underline text color')
+            .setDesc('Use any hex color. Leave blank to use the theme default.')
+            .addColorPicker(color => color.setValue(this.plugin.settings.newsTextColor || '#ffffff').onChange((value) => {
+                void (async() => {
+                    this.plugin.settings.newsTextColor = value.trim();
+                    await saveSettingsAndUpdateTickerColors();
+                })();
+            }))
+            .addExtraButton(button => {
+                button
+                    .setIcon('reset')
+                    .setTooltip('Use theme default')
+                    .onClick(() => {
+                        void (async() => {
+                            this.plugin.settings.newsTextColor = "";
+                            await saveSettingsAndUpdateTickerColors();
+                            this.display();
                         })();
                     });
             });

@@ -137,7 +137,7 @@
   padding: 0;
   margin: 0;
   font-size: 0.8rem;
-  color: var(--text-faint);
+  color: var(--news-text-color, var(--text-faint));
   white-space: nowrap;
 }
 
@@ -149,7 +149,7 @@
 .headline-meta li + li::before {
   content: "•";
   margin-right: 0.5rem;
-  color: var(--text-faint);
+  color: var(--news-text-color, var(--text-faint));
 }
 
 .headline-link:hover,

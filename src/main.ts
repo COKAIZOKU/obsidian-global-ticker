@@ -282,6 +282,7 @@ class MyPanelView extends ItemView {
   private newsDirection: TickerDirection;
   private stockDirection: TickerDirection;
 
+  private newsTextColor: string;
   private stockPriceColor: string;
   private stockChangeColor: string;
   private stockChangeNegativeColor: string;
@@ -299,6 +300,7 @@ class MyPanelView extends ItemView {
     stockSpeed: TickerSpeed,
     newsDirection: TickerDirection,
     stockDirection: TickerDirection,
+    newsTextColor: string,
     stockPriceColor: string,
     stockChangeColor: string,
     stockChangeNegativeColor: string
@@ -309,6 +311,7 @@ class MyPanelView extends ItemView {
     this.stockSpeed = stockSpeed;
     this.newsDirection = newsDirection;
     this.stockDirection = stockDirection;
+    this.newsTextColor = newsTextColor;
     this.stockPriceColor = stockPriceColor;
     this.stockChangeColor = stockChangeColor;
     this.stockChangeNegativeColor = stockChangeNegativeColor;
@@ -329,11 +332,13 @@ class MyPanelView extends ItemView {
   }
 
   // Update stock color settings
-  setStockColors(
+  setTickerColors(
+    newsTextColor: string,
     stockPriceColor: string,
     stockChangeColor: string,
     stockChangeNegativeColor: string
   ) {
+    this.newsTextColor = newsTextColor;
     this.stockPriceColor = stockPriceColor;
     this.stockChangeColor = stockChangeColor;
     this.stockChangeNegativeColor = stockChangeNegativeColor;
@@ -407,6 +412,7 @@ class MyPanelView extends ItemView {
 
   // Apply stock color variables to the stock ticker
   private applyColorVars() {
+    this.setColorVar("--news-text-color", this.newsTextColor);
     this.setColorVar("--stock-price-color", this.stockPriceColor);
     this.setColorVar("--stock-change-color", this.stockChangeColor);
     this.setColorVar(
@@ -449,6 +455,7 @@ class MyPanelView extends ItemView {
     scroller.dataset.direction = this.newsDirection;
 
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
+    this.applyColorVars();
     await this.loadHeadlines(list);
   }
 
@@ -674,6 +681,7 @@ export default class GlobalTicker extends Plugin {
 					this.settings.stockTickerSpeed,
 					this.settings.newsTickerDirection,
 					this.settings.stockTickerDirection,
+					this.settings.newsTextColor,
 					this.settings.stockPriceColor,
 					this.settings.stockChangeColor,
 					this.settings.stockChangeNegativeColor
@@ -1158,7 +1166,8 @@ export default class GlobalTicker extends Plugin {
 		leaves.forEach((leaf) => {
 			const view = leaf.view;
 			if (view instanceof MyPanelView) {
-				view.setStockColors(
+				view.setTickerColors(
+					this.settings.newsTextColor,
 					this.settings.stockPriceColor,
 					this.settings.stockChangeColor,
 					this.settings.stockChangeNegativeColor
