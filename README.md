@@ -25,6 +25,7 @@ The news ticker uses the [Currents News API](https://currentsapi.services/en), w
 - `Language:` Filter headlines by language. The list of 18+ valid language codes be found at `/v1/available/languages`.
 - `Limit:` Number of headlines to show, 10 is the limit with the free key.
 - **Underline:** Add an underline with the source and category of each headline. Not all fetched headlines have categories, so this field may be empty. If a headline displays a category different from the selected ones, it's because headlines can belong to multiple categories.
+- **Color:** Pick the color of the underline text.
 
 The headlines are clickable and will open the original source for more information. Unfortunately, some of them are paywalled :^( so you may want to exclude those domains if you don't have a subscription.
 
@@ -34,7 +35,7 @@ The headlines are clickable and will open the original source for more informati
 
 The stocks ticker uses the [Finnhub API](https://finnhub.io/) to retrieve global stock quotes. It displays the last fetched price and percentage change. 
 - `Symbol:` Select the stock symbols to show. To see which symbols are supported, refer to `/v1/stock/symbol`, which includes a large list of available options.
-- **Color:** The price color and the colors for both negative and positive percentage changes are customizable using hex color values.
+- **Color:** Pick the color of the price, negative and positive percentages.
 
 ## Cache
 
