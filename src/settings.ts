@@ -21,6 +21,7 @@ export interface GlobalTickerSettings {
     showStockFooter : boolean;
     useUsDateFormat : boolean;
     refreshOnAppOpen : boolean;
+    pauseOnHover : boolean;
     tickerDisplayMode : TickerDisplayMode;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
@@ -49,6 +50,7 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     showStockFooter: true,
     useUsDateFormat: false,
     refreshOnAppOpen: false,
+    pauseOnHover: true,
     tickerDisplayMode: "both",
     showHeadlineMeta: true,
     newsTextColor: "",
@@ -519,6 +521,19 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         void (async() => {
                             this.plugin.settings.refreshOnAppOpen = value;
                             await saveSettingsOnly();
+                        })();
+                    });
+            });
+        new Setting(containerEl)
+            .setName("Pause on hover")
+            .setDesc("Pause ticker scrolling while the pointer is over it.")
+            .addToggle(toggle => {
+                toggle
+                    .setValue(this.plugin.settings.pauseOnHover)
+                    .onChange((value) => {
+                        void (async() => {
+                            this.plugin.settings.pauseOnHover = value;
+                            await saveSettingsAndRefreshPanels();
                         })();
                     });
             });

@@ -43,7 +43,7 @@
   animation-play-state: var(--_animation-play-state, running);
 }
 
-.scroller[data-animated="true"]:hover .scroller__inner {
+.scroller[data-animated="true"][data-pause-on-hover="true"]:hover .scroller__inner {
   animation-play-state: paused;
 }
 

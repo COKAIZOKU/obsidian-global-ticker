@@ -453,6 +453,7 @@ class MyPanelView extends ItemView {
     scroller.dataset.ticker = "news";
     scroller.dataset.speed = this.newsSpeed;
     scroller.dataset.direction = this.newsDirection;
+    scroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
 
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
     this.applyColorVars();
@@ -467,6 +468,7 @@ class MyPanelView extends ItemView {
     stockScroller.dataset.ticker = "stock";
     stockScroller.dataset.speed = this.stockSpeed;
     stockScroller.dataset.direction = this.stockDirection;
+    stockScroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
 
     const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner", "stock-list"] });
     const quotes = await this.plugin.getStockQuotes();
