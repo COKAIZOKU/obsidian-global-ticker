@@ -239,10 +239,6 @@
   padding-right: var(--size-4-4);
 }
 
-.setting-section-header-margin-top {
-  margin-top: 1.5rem;
-}
-
 /* Keyframes for the scrolling animation
 Using a CSS variable for the loop distance to allow dynamic adjustments */
 

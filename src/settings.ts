@@ -88,6 +88,15 @@ const createLinkFragment = (
     return fragment;
 };
 
+const createSettingGroup = (containerEl: HTMLElement, title: string): HTMLElement => {
+    const groupEl = containerEl.createDiv({cls: "setting-group"});
+    groupEl.createEl("div", {
+        text: title,
+        cls: "setting-item-name setting-section-header",
+    });
+    return groupEl.createDiv({cls: "setting-items"});
+};
+
 const CURRENTS_REGIONS : Array < [string, string] > = [
     [
         "", "All regions"
@@ -428,6 +437,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             this.plugin.updateTickerColors();
         };
         const addTickerSpeedAndDirectionSetting = (
+            groupEl: HTMLElement,
             name: string,
             desc: string,
             speedValue: TickerSpeed,
@@ -435,7 +445,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             onSpeedChange: (value: TickerSpeed) => Promise<void>,
             onDirectionChange: (value: TickerDirection) => Promise<void>
         ) => {
-            const setting = new Setting(containerEl)
+            const setting = new Setting(groupEl)
                 .setName(name)
                 .setDesc(desc);
 
@@ -468,12 +478,9 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
 		// Global Settings Section
 
-        containerEl.createEl('div', {
-            text: 'Global settings',
-            cls: 'setting-item-name setting-section-header'
-        });
+        const globalGroupEl = createSettingGroup(containerEl, "Global settings");
 
-        new Setting(containerEl)
+        new Setting(globalGroupEl)
             .setName("Ticker display")
             .setDesc("Choose which tickers to show in the panel.")
             .addDropdown(dropdown => {
@@ -493,7 +500,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(globalGroupEl)
             .setName("Date format")
             .setDesc("Choose the date format used in the refresh footer.")
             .addDropdown(dropdown => {
@@ -511,7 +518,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(globalGroupEl)
             .setName("Refresh on app open")
             .setDesc("Refresh headlines and stocks when Obsidian starts.")
             .addToggle(toggle => {
@@ -524,7 +531,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         })();
                     });
             });
-        new Setting(containerEl)
+        new Setting(globalGroupEl)
             .setName("Pause on hover")
             .setDesc("Pause ticker scrolling while the pointer is over it.")
             .addToggle(toggle => {
@@ -540,10 +547,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
 		// News Settings Section
 
-        containerEl.createEl('div', {
-            text: 'News settings',
-            cls: 'setting-item-name setting-section-header setting-section-header-margin-top'
-        });
+        const newsGroupEl = createSettingGroup(containerEl, "News settings");
 
         const descCurrentsKey = createLinkFragment(
             "Used to fetch live headlines. Get a free Currents API key by creating an account ",
@@ -552,7 +556,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "."
         );
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Currents API key')
             .setDesc(descCurrentsKey)
             .addComponent(el => new SecretComponent(this.app, el)
@@ -572,7 +576,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "."
         );
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Categories')
             .setDesc(descCategory)
             .addTextArea(text => text.setPlaceholder('Science, food').setValue(this.plugin.settings.currentsCategory).onChange((value) => {
@@ -588,7 +592,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             ". "
         );
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Domains')
             .setDesc(descDomains)
             .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(this.plugin.settings.currentsDomains).onChange((value) => {
@@ -598,7 +602,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                 })();
             }));
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Exclude domains')
             .setDesc('Exclude headlines from specific domains. If a domain appears in both the included and excluded domains, it will be excluded.')
             .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(this.plugin.settings.currentsExcludeDomains).onChange((value) => {
@@ -608,7 +612,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                 })();
             }));
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Region')
             .setDesc('Filter headlines by region.')
             .addDropdown(dropdown => {
@@ -625,7 +629,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Language')
             .setDesc('Filter headlines by language.')
             .addDropdown(dropdown => {
@@ -642,7 +646,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Headline limit')
             .setDesc('Number of headlines to fetch. The limit is 10 with the free API key. Beware the ' +
                     'amount of headlines displayed depends on the available headlines. For example, i' +
@@ -668,6 +672,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             });
 
         addTickerSpeedAndDirectionSetting(
+            newsGroupEl,
             "News ticker speed and direction",
             "Choose how fast the news ticker scrolls and its direction.",
             this.plugin.settings.newsTickerSpeed,
@@ -682,7 +687,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             }
         );
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName("Show news footer")
             .setDesc("Toggle the last refreshed info and refresh button for news. Beware of the daily limit of 20 requests with the free API key.")
             .addToggle(toggle => {
@@ -695,7 +700,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         })();
                     });
             });
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName("Show headline underline")
             .setDesc("Toggle the source and category line under each headline.")
             .addToggle(toggle => {
@@ -709,7 +714,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Headline underline text color')
             .setDesc('Select any color.')
             .addColorPicker(color => color.setValue(this.plugin.settings.newsTextColor || '#ffffff').onChange((value) => {
@@ -731,7 +736,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(newsGroupEl)
             .setName('Refresh headlines')
             .setDesc('Fetch fresh headlines. The limit is 20 requests daily with the free API key.')
             .addButton(button => {
@@ -764,10 +769,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
 		// Stocks Settings Section
 
-        containerEl.createEl('div', {
-            text: 'Stocks settings',
-            cls: 'setting-item-name setting-section-header setting-section-header-margin-top'
-        });
+        const stocksGroupEl = createSettingGroup(containerEl, "Stocks settings");
 
         const descFinnhubKey = createLinkFragment(
             "Used to fetch stocks data. Get a free Finnhub API key by creating an account ",
@@ -776,7 +778,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "."
         );
 
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName('Finnhub API key')
             .setDesc(descFinnhubKey)
             .addComponent(el => new SecretComponent(this.app, el)
@@ -790,7 +792,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                 }));
 
         const descStockSymbols = "Comma-separated list of stocks ticker symbols to display.";
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName('Stocks symbols')
             .setDesc(descStockSymbols)
             .addTextArea(text => text.setPlaceholder('Aapl, msft, tsla').setValue(this.plugin.settings.finnhubSymbols).onChange((value) => {
@@ -800,7 +802,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                 })();
             }));
 
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName('Stocks positive change color')
             .setDesc('Select any color.')
             .addColorPicker(color => color.setValue(this.plugin.settings.stockChangeColor || '#a68af6').onChange((value) => {
@@ -822,7 +824,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName('Stocks negative change color')
             .setDesc('Select any color.')
             .addColorPicker(color => color.setValue(this.plugin.settings.stockChangeNegativeColor || '#fb464c').onChange((value) => {
@@ -844,7 +846,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName('Stocks price color')
             .setDesc('Select any color.')
             .addColorPicker(color => color.setValue(this.plugin.settings.stockPriceColor || '#666666').onChange((value) => {
@@ -866,6 +868,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
         addTickerSpeedAndDirectionSetting(
+            stocksGroupEl,
             "Stocks ticker speed and direction",
             "Choose how fast the stocks ticker scrolls and its direction.",
             this.plugin.settings.stockTickerSpeed,
@@ -880,7 +883,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             }
         );
 
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName("Show stocks footer")
             .setDesc("Toggle the last refreshed info and refresh button for stocks.")
             .addToggle(toggle => {
@@ -894,7 +897,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
+        new Setting(stocksGroupEl)
             .setName('Refresh stocks data')
             .setDesc('Fetch the latest stocks quotes.')
             .addButton(button => {
