@@ -186,7 +186,7 @@ export function initTicker(root: ParentNode = document): void {
       restartAnimation();
     };
 
-    requestAnimationFrame(rebuild);
+    window.requestAnimationFrame(rebuild);
 
     // Use ResizeObserver if available for more efficient resizing
     // Otherwise fall back to window resize event

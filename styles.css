@@ -48,13 +48,13 @@
 }
 
 .scroller[data-animated="true"] .scroller__inner.is-restarting {
-  animation: none !important;
+  animation: none ;
 }
 
 .scroller__inner [data-ticker-clone="true"] {
-  display: inline-flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  display: inline-flex ;
+  visibility: visible ;
+  opacity: 1 ;
 }
 
 .scroller[data-direction="right"] {
