@@ -4,31 +4,31 @@ import {
     Setting,
 } from "obsidian";
 import GlobalTicker from "./main";
-import {addNewsSettings} from "./settings/currents";
-import {addStocksSettings} from "./settings/finnhub";
+import {addCurrentsSettings} from "./settings/currents";
+import {addFinnhubSettings} from "./settings/finnhub";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
 export type TickerDirection = "left" | "right";
-export type TickerDisplayMode = "both" | "news" | "stocks";
+export type TickerDisplayMode = "both" | "currents" | "finnhub";
 
 export interface GlobalTickerSettings {
     mySetting : string;
-    newsTickerSpeed : TickerSpeed;
-    stockTickerSpeed : TickerSpeed;
-    newsTickerDirection : TickerDirection;
-    stockTickerDirection : TickerDirection;
-    showNewsFooter : boolean;
-    showStockFooter : boolean;
+    currentsTickerSpeed : TickerSpeed;
+    finnhubTickerSpeed : TickerSpeed;
+    currentsTickerDirection : TickerDirection;
+    finnhubTickerDirection : TickerDirection;
+    showCurrentsFooter : boolean;
+    showFinnhubFooter : boolean;
     useUsDateFormat : boolean;
     refreshOnAppOpen : boolean;
     pauseOnHover : boolean;
     tickerDisplayMode : TickerDisplayMode;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
-    newsTextColor : string;
-    stockChangeColor : string;
-    stockChangeNegativeColor : string;
-    stockPriceColor : string;
+    currentsTextColor : string;
+    finnhubChangeColor : string;
+    finnhubChangeNegativeColor : string;
+    finnhubPriceColor : string;
     finnhubApiKey : string;
     finnhubSymbols : string;
     currentsApiKey : string;
@@ -42,21 +42,21 @@ export interface GlobalTickerSettings {
 
 export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     mySetting: 'default',
-    newsTickerSpeed: "slow",
-    stockTickerSpeed: "slow",
-    newsTickerDirection: "left",
-    stockTickerDirection: "left",
-    showNewsFooter: true,
-    showStockFooter: true,
+    currentsTickerSpeed: "slow",
+    finnhubTickerSpeed: "slow",
+    currentsTickerDirection: "left",
+    finnhubTickerDirection: "left",
+    showCurrentsFooter: true,
+    showFinnhubFooter: true,
     useUsDateFormat: false,
     refreshOnAppOpen: false,
     pauseOnHover: true,
     tickerDisplayMode: "both",
     showHeadlineMeta: true,
-    newsTextColor: "",
-    stockChangeColor: "",
-    stockChangeNegativeColor: "",
-    stockPriceColor: "",
+    currentsTextColor: "",
+    finnhubChangeColor: "",
+    finnhubChangeNegativeColor: "",
+    finnhubPriceColor: "",
     finnhubApiKey: "",
     finnhubSymbols: "AAPL, MSFT, GOOGL, AMZN, TSLA, NVDA, META",
     currentsApiKey: "",
@@ -106,13 +106,13 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             .setDesc("Choose which tickers to show in the panel.")
             .addDropdown(dropdown => {
                 dropdown.addOption("both", "Both");
-                dropdown.addOption("news", "News only");
-                dropdown.addOption("stocks", "Stocks only");
+                dropdown.addOption("currents", "News only");
+                dropdown.addOption("finnhub", "Stocks only");
                 dropdown
                     .setValue(this.plugin.settings.tickerDisplayMode)
                     .onChange((value) => {
                         void (async() => {
-                            if (value !== "both" && value !== "news" && value !== "stocks") {
+                            if (value !== "both" && value !== "currents" && value !== "finnhub") {
                                 return;
                             }
                             this.plugin.settings.tickerDisplayMode = value;
@@ -166,7 +166,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     });
             });
 
-        addNewsSettings(containerEl, this.app, this.plugin, () => this.display());
-        addStocksSettings(containerEl, this.app, this.plugin, () => this.display());
+        addCurrentsSettings(containerEl, this.app, this.plugin, () => this.display());
+        addFinnhubSettings(containerEl, this.app, this.plugin, () => this.display());
     }
 }

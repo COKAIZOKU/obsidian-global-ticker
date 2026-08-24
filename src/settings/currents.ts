@@ -359,7 +359,7 @@ const addTickerSpeedAndDirectionSetting = (groupEl : HTMLElement, name : string,
     }));
 };
 
-export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
+export const addCurrentsSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
     const saveSettingsOnly = async() => {
         await plugin.saveSettings();
     };
@@ -378,13 +378,13 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
 
     // News Settings Section
 
-    const newsGroupEl = createSettingGroup(containerEl, "Current news settings");
+    const currentsGroupEl = createSettingGroup(containerEl, "Current news settings");
 
     const descCurrentsKey = createLinkFragment("Used to fetch live headlines. Get a free Currents API key by creating an account" +
             " ",
     "here", "https://currentsapi.services/", ".");
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Currents API key')
         .setDesc(descCurrentsKey)
         .addComponent(el => new SecretComponent(app, el).setValue(plugin.settings.currentsApiKey).onChange((value) => {
@@ -400,7 +400,7 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
             " programming, world, health. For all categories available, visit the ",
     "documentation", "https://api.currentsapi.services/v1/available/categories", ".");
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Categories')
         .setDesc(descCategory)
         .addTextArea(text => text.setPlaceholder('Science, food').setValue(plugin.settings.currentsCategory).onChange((value) => {
@@ -414,7 +414,7 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
             "it ",
     "here", "https://www.currentsapi.services/en/statistic/", ". ");
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Domains')
         .setDesc(descDomains)
         .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(plugin.settings.currentsDomains).onChange((value) => {
@@ -424,7 +424,7 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
             })();
         }));
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Exclude domains')
         .setDesc('Exclude headlines from specific domains. If a domain appears in both the include' +
                 'd and excluded domains, it will be excluded.')
@@ -435,7 +435,7 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
             })();
         }));
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Region')
         .setDesc('Filter headlines by region.')
         .addDropdown(dropdown => {
@@ -452,7 +452,7 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
                 });
         });
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Language')
         .setDesc('Filter headlines by language.')
         .addDropdown(dropdown => {
@@ -469,7 +469,7 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
                 });
         });
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Headline limit')
         .setDesc('Number of headlines to fetch. The limit is 10 with the free API key. Beware the ' +
                 'amount of headlines displayed depends on the available headlines. For example, i' +
@@ -494,30 +494,30 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
                 });
         });
 
-    addTickerSpeedAndDirectionSetting(newsGroupEl, "News ticker speed and direction", "Choose how fast the news ticker scrolls and its direction.", plugin.settings.newsTickerSpeed, plugin.settings.newsTickerDirection, async(value) => {
-        plugin.settings.newsTickerSpeed = value;
+    addTickerSpeedAndDirectionSetting(currentsGroupEl, "News ticker speed and direction", "Choose how fast the news ticker scrolls and its direction.", plugin.settings.currentsTickerSpeed, plugin.settings.currentsTickerDirection, async(value) => {
+        plugin.settings.currentsTickerSpeed = value;
         await saveSettingsAndUpdateTickerSettings();
     }, async(value) => {
-        plugin.settings.newsTickerDirection = value;
+        plugin.settings.currentsTickerDirection = value;
         await saveSettingsAndUpdateTickerSettings();
     });
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName("Show news footer")
         .setDesc("Toggle the last refreshed info and refresh button for news. Beware of the daily " +
                 "limit of 20 requests with the free API key.")
         .addToggle(toggle => {
             toggle
-                .setValue(plugin.settings.showNewsFooter)
+                .setValue(plugin.settings.showCurrentsFooter)
                 .onChange((value) => {
                     void(async() => {
-                        plugin.settings.showNewsFooter = value;
+                        plugin.settings.showCurrentsFooter = value;
                         await saveSettingsAndRefreshPanels();
                     })();
                 });
         });
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName("Show headline underline")
         .setDesc("Toggle the source and category line under each headline.")
         .addToggle(toggle => {
@@ -531,12 +531,12 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
                 });
         });
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Headline underline text color')
         .setDesc('Select any color.')
-        .addColorPicker(color => color.setValue(plugin.settings.newsTextColor || '#ffffff').onChange((value) => {
+        .addColorPicker(color => color.setValue(plugin.settings.currentsTextColor || '#ffffff').onChange((value) => {
             void(async() => {
-                plugin.settings.newsTextColor = value.trim();
+                plugin.settings.currentsTextColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
         }))
@@ -546,14 +546,14 @@ export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : G
                 .setTooltip('Use theme default')
                 .onClick(() => {
                     void(async() => {
-                        plugin.settings.newsTextColor = "";
+                        plugin.settings.currentsTextColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
                     })();
                 });
         });
 
-    new Setting(newsGroupEl)
+    new Setting(currentsGroupEl)
         .setName('Refresh headlines')
         .setDesc('Fetch fresh headlines. The limit is 20 requests daily with the free API key.')
         .addButton(button => {

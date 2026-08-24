@@ -9,14 +9,14 @@
   overflow: hidden;
 }
 
-.workspace-leaf-content[data-type="global-ticker-panel"] .news-section,
-.workspace-leaf-content[data-type="global-ticker-panel"] .stock-section {
+.workspace-leaf-content[data-type="global-ticker-panel"] .currents-section,
+.workspace-leaf-content[data-type="global-ticker-panel"] .finnhub-section {
   flex: 1 1 0;
   min-height: 0;
 }
 
-.workspace-leaf-content[data-type="global-ticker-panel"] .news-section > .scroller,
-.workspace-leaf-content[data-type="global-ticker-panel"] .stock-section > .scroller {
+.workspace-leaf-content[data-type="global-ticker-panel"] .currents-section > .scroller,
+.workspace-leaf-content[data-type="global-ticker-panel"] .finnhub-section > .scroller {
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -105,8 +105,8 @@
   flex: 0 0 auto;
 }
 
-.news-section,
-.stock-section {
+.currents-section,
+.finnhub-section {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -141,7 +141,7 @@
   padding: 0;
   margin: 0;
   font-size: 0.8rem;
-  color: var(--news-text-color, var(--text-faint));
+  color: var(--currents-text-color, var(--text-faint));
   white-space: nowrap;
 }
 
@@ -153,7 +153,7 @@
 .headline-meta li + li::before {
   content: "•";
   margin-right: 0.5rem;
-  color: var(--news-text-color, var(--text-faint));
+  color: var(--currents-text-color, var(--text-faint));
 }
 
 .headline-link:hover,
@@ -163,32 +163,32 @@
 
 /* Stock ticker */
 
-.stock-list {
+.finnhub-list {
   list-style: none;
   padding-inline: 0;
 }
 
-.stock-list li {
+.finnhub-list li {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.stock-change {
-  color: var(--stock-change-color, var(--text-accent));
+.finnhub-change {
+  color: var(--finnhub-change-color, var(--text-accent));
   font-variant-numeric: tabular-nums;
 }
 
-.stock-change.is-negative {
-  color: var(--stock-change-negative-color, var(--text-error));
+.finnhub-change.is-negative {
+  color: var(--finnhub-change-negative-color, var(--text-error));
 }
 
-.stock-price {
-  color: var(--stock-price-color, var(--text-faint));
+.finnhub-price {
+  color: var(--finnhub-price-color, var(--text-faint));
   font-variant-numeric: tabular-nums;
 }
 
-.stock-section {
+.finnhub-section {
   margin-top: 0;
 }
 

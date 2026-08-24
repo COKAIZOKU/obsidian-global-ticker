@@ -45,7 +45,7 @@ const addTickerSpeedAndDirectionSetting = (groupEl : HTMLElement, name : string,
     }));
 };
 
-export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
+export const addFinnhubSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
     const saveSettingsOnly = async() => {
         await plugin.saveSettings();
     };
@@ -64,11 +64,11 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
 
     // Stocks Settings Section
 
-    const stocksGroupEl = createSettingGroup(containerEl, "Finnhub stocks settings");
+    const finnhubGroupEl = createSettingGroup(containerEl, "Finnhub stocks settings");
 
     const descFinnhubKey = createLinkFragment("Used to fetch stocks data. Get a free Finnhub API key by creating an account ", "here", "https://finnhub.io", ".");
 
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName('Finnhub API key')
         .setDesc(descFinnhubKey)
         .addComponent(el => new SecretComponent(app, el).setValue(plugin.settings.finnhubApiKey).onChange((value) => {
@@ -80,7 +80,7 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
         }));
 
     const descStockSymbols = "Comma-separated list of stocks ticker symbols to display.";
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName('Stocks symbols')
         .setDesc(descStockSymbols)
         .addTextArea(text => text.setPlaceholder('Aapl, msft, tsla').setValue(plugin.settings.finnhubSymbols).onChange((value) => {
@@ -90,12 +90,12 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
             })();
         }));
 
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName('Stocks positive change color')
         .setDesc('Select any color.')
-        .addColorPicker(color => color.setValue(plugin.settings.stockChangeColor || '#a68af6').onChange((value) => {
+        .addColorPicker(color => color.setValue(plugin.settings.finnhubChangeColor || '#a68af6').onChange((value) => {
             void(async() => {
-                plugin.settings.stockChangeColor = value.trim();
+                plugin.settings.finnhubChangeColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
         }))
@@ -105,19 +105,19 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
                 .setTooltip('Use theme default')
                 .onClick(() => {
                     void(async() => {
-                        plugin.settings.stockChangeColor = "";
+                        plugin.settings.finnhubChangeColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
                     })();
                 });
         });
 
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName('Stocks negative change color')
         .setDesc('Select any color.')
-        .addColorPicker(color => color.setValue(plugin.settings.stockChangeNegativeColor || '#fb464c').onChange((value) => {
+        .addColorPicker(color => color.setValue(plugin.settings.finnhubChangeNegativeColor || '#fb464c').onChange((value) => {
             void(async() => {
-                plugin.settings.stockChangeNegativeColor = value.trim();
+                plugin.settings.finnhubChangeNegativeColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
         }))
@@ -127,19 +127,19 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
                 .setTooltip('Use theme default')
                 .onClick(() => {
                     void(async() => {
-                        plugin.settings.stockChangeNegativeColor = "";
+                        plugin.settings.finnhubChangeNegativeColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
                     })();
                 });
         });
 
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName('Stocks price color')
         .setDesc('Select any color.')
-        .addColorPicker(color => color.setValue(plugin.settings.stockPriceColor || '#666666').onChange((value) => {
+        .addColorPicker(color => color.setValue(plugin.settings.finnhubPriceColor || '#666666').onChange((value) => {
             void(async() => {
-                plugin.settings.stockPriceColor = value.trim();
+                plugin.settings.finnhubPriceColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
         }))
@@ -149,36 +149,36 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
                 .setTooltip('Use theme default')
                 .onClick(() => {
                     void(async() => {
-                        plugin.settings.stockPriceColor = "";
+                        plugin.settings.finnhubPriceColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
                     })();
                 });
         });
 
-    addTickerSpeedAndDirectionSetting(stocksGroupEl, "Stocks ticker speed and direction", "Choose how fast the stocks ticker scrolls and its direction.", plugin.settings.stockTickerSpeed, plugin.settings.stockTickerDirection, async(value) => {
-        plugin.settings.stockTickerSpeed = value;
+    addTickerSpeedAndDirectionSetting(finnhubGroupEl, "Stocks ticker speed and direction", "Choose how fast the stocks ticker scrolls and its direction.", plugin.settings.finnhubTickerSpeed, plugin.settings.finnhubTickerDirection, async(value) => {
+        plugin.settings.finnhubTickerSpeed = value;
         await saveSettingsAndUpdateTickerSettings();
     }, async(value) => {
-        plugin.settings.stockTickerDirection = value;
+        plugin.settings.finnhubTickerDirection = value;
         await saveSettingsAndUpdateTickerSettings();
     });
 
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName("Show stocks footer")
         .setDesc("Toggle the last refreshed info and refresh button for stocks.")
         .addToggle(toggle => {
             toggle
-                .setValue(plugin.settings.showStockFooter)
+                .setValue(plugin.settings.showFinnhubFooter)
                 .onChange((value) => {
                     void(async() => {
-                        plugin.settings.showStockFooter = value;
+                        plugin.settings.showFinnhubFooter = value;
                         await saveSettingsAndRefreshPanels();
                     })();
                 });
         });
 
-    new Setting(stocksGroupEl)
+    new Setting(finnhubGroupEl)
         .setName('Refresh stocks data')
         .setDesc('Fetch the latest stocks quotes.')
         .addButton(button => {
@@ -190,7 +190,7 @@ export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin :
                         button.setDisabled(true);
                         button.setButtonText("Refreshing...");
                         try {
-                            const refreshed = await plugin.refreshStocks();
+                            const refreshed = await plugin.refreshFinnhub();
                             if (refreshed) {
                                 new Notice("Stocks data refreshed.");
                             } else {
