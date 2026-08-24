@@ -4,8 +4,8 @@ import {
     Setting,
 } from "obsidian";
 import GlobalTicker from "./main";
-import {addNewsSettings} from "./settings/news";
-import {addStocksSettings} from "./settings/stocks";
+import {addNewsSettings} from "./settings/currents";
+import {addStocksSettings} from "./settings/finnhub";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
 export type TickerDirection = "left" | "right";

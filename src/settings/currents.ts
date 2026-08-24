@@ -1,18 +1,9 @@
-import {
-    App,
-    Notice,
-    SecretComponent,
-    Setting,
-} from "obsidian";
+import {App, Notice, SecretComponent, Setting} from "obsidian";
 import type GlobalTicker from "../main";
-import type {TickerDirection, TickerSpeed} from "../settings";
+import type {TickerDirection, TickerSpeed}
+from "../settings";
 
-const createLinkFragment = (
-    leadingText: string,
-    linkText: string,
-    href: string,
-    trailingText: string
-): DocumentFragment => {
+const createLinkFragment = (leadingText : string, linkText : string, href : string, trailingText : string) : DocumentFragment => {
     const fragment = document.createDocumentFragment();
     if (leadingText) {
         fragment.append(document.createTextNode(leadingText));
@@ -27,11 +18,11 @@ const createLinkFragment = (
     return fragment;
 };
 
-const createSettingGroup = (containerEl: HTMLElement, title: string): HTMLElement => {
+const createSettingGroup = (containerEl : HTMLElement, title : string) : HTMLElement => {
     const groupEl = containerEl.createDiv({cls: "setting-group"});
     groupEl.createEl("div", {
         text: title,
-        cls: "setting-item-name setting-section-header",
+        cls: "setting-item-name setting-section-header"
     });
     return groupEl.createDiv({cls: "setting-items"});
 };
@@ -350,50 +341,25 @@ const CURRENTS_LANGUAGES : Array < [string, string] > = [
     ["vi", "Vietnamese"]
 ];
 
-const addTickerSpeedAndDirectionSetting = (
-    groupEl: HTMLElement,
-    name: string,
-    desc: string,
-    speedValue: TickerSpeed,
-    directionValue: TickerDirection,
-    onSpeedChange: (value: TickerSpeed) => Promise<void>,
-    onDirectionChange: (value: TickerDirection) => Promise<void>
-) => {
+const addTickerSpeedAndDirectionSetting = (groupEl : HTMLElement, name : string, desc : string, speedValue : TickerSpeed, directionValue : TickerDirection, onSpeedChange : (value : TickerSpeed) => Promise < void >, onDirectionChange : (value : TickerDirection) => Promise < void >) => {
     const setting = new Setting(groupEl)
         .setName(name)
         .setDesc(desc);
 
-    setting
-        .addDropdown(dropdown => dropdown
-            .addOption("very-slow", "Very slow")
-            .addOption("slow", "Slow")
-            .addOption("medium", "Medium")
-            .addOption("fast", "Fast")
-            .setValue(speedValue)
-            .onChange((value) => {
-                if (value !== "very-slow" && value !== "slow" && value !== "medium" && value !== "fast") {
-                    return;
-                }
-                void onSpeedChange(value);
-            }))
-        .addDropdown(dropdown => dropdown
-            .addOption("left", "Left")
-            .addOption("right", "Right")
-            .setValue(directionValue)
-            .onChange((value) => {
-                if (value !== "left" && value !== "right") {
-                    return;
-                }
-                void onDirectionChange(value);
-            }));
+    setting.addDropdown(dropdown => dropdown.addOption("very-slow", "Very slow").addOption("slow", "Slow").addOption("medium", "Medium").addOption("fast", "Fast").setValue(speedValue).onChange((value) => {
+        if (value !== "very-slow" && value !== "slow" && value !== "medium" && value !== "fast") {
+            return;
+        }
+        void onSpeedChange(value);
+    })).addDropdown(dropdown => dropdown.addOption("left", "Left").addOption("right", "Right").setValue(directionValue).onChange((value) => {
+        if (value !== "left" && value !== "right") {
+            return;
+        }
+        void onDirectionChange(value);
+    }));
 };
 
-export const addNewsSettings = (
-    containerEl: HTMLElement,
-    app: App,
-    plugin: GlobalTicker,
-    redisplay: () => void
-): void => {
+export const addNewsSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
     const saveSettingsOnly = async() => {
         await plugin.saveSettings();
     };
@@ -410,59 +376,49 @@ export const addNewsSettings = (
         plugin.updateTickerColors();
     };
 
-	// News Settings Section
+    // News Settings Section
 
-    const newsGroupEl = createSettingGroup(containerEl, "News settings");
+    const newsGroupEl = createSettingGroup(containerEl, "Current news settings");
 
-    const descCurrentsKey = createLinkFragment(
-        "Used to fetch live headlines. Get a free Currents API key by creating an account ",
-        "here",
-        "https://currentsapi.services/",
-        "."
-    );
+    const descCurrentsKey = createLinkFragment("Used to fetch live headlines. Get a free Currents API key by creating an account" +
+            " ",
+    "here", "https://currentsapi.services/", ".");
 
     new Setting(newsGroupEl)
         .setName('Currents API key')
         .setDesc(descCurrentsKey)
-        .addComponent(el => new SecretComponent(app, el)
-            .setValue(plugin.settings.currentsApiKey)
-            .onChange((value) => {
-                void (async() => {
-                    const normalized = (value ?? "").trim();
-                    plugin.settings.currentsApiKey = normalized;
-                    await saveSettingsOnly();
-                })();
-            }));
+        .addComponent(el => new SecretComponent(app, el).setValue(plugin.settings.currentsApiKey).onChange((value) => {
+            void(async() => {
+                const normalized = (value ?? "").trim();
+                plugin.settings.currentsApiKey = normalized;
+                await saveSettingsOnly();
+            })();
+        }));
 
-    const descCategory = createLinkFragment(
-        "By default all categories are included. Some supported categories are: regional, business, science, sports, technology, general, entertainment, food, lifestyle, programming, world, health. For all categories available, visit the ",
-        "documentation",
-        "https://api.currentsapi.services/v1/available/categories",
-        "."
-    );
+    const descCategory = createLinkFragment("By default all categories are included. Some supported categories are: regional," +
+            " business, science, sports, technology, general, entertainment, food, lifestyle," +
+            " programming, world, health. For all categories available, visit the ",
+    "documentation", "https://api.currentsapi.services/v1/available/categories", ".");
 
     new Setting(newsGroupEl)
         .setName('Categories')
         .setDesc(descCategory)
         .addTextArea(text => text.setPlaceholder('Science, food').setValue(plugin.settings.currentsCategory).onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.currentsCategory = value.trim();
                 await saveSettingsOnly();
             })();
         }));
 
-    const descDomains = createLinkFragment(
-        "Filter headlines by source domains. To see if a domain is supported, search for it ",
-        "here",
-        "https://www.currentsapi.services/en/statistic/",
-        ". "
-    );
+    const descDomains = createLinkFragment("Filter headlines by source domains. To see if a domain is supported, search for " +
+            "it ",
+    "here", "https://www.currentsapi.services/en/statistic/", ". ");
 
     new Setting(newsGroupEl)
         .setName('Domains')
         .setDesc(descDomains)
         .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(plugin.settings.currentsDomains).onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.currentsDomains = value.trim();
                 await saveSettingsOnly();
             })();
@@ -470,9 +426,10 @@ export const addNewsSettings = (
 
     new Setting(newsGroupEl)
         .setName('Exclude domains')
-        .setDesc('Exclude headlines from specific domains. If a domain appears in both the included and excluded domains, it will be excluded.')
+        .setDesc('Exclude headlines from specific domains. If a domain appears in both the include' +
+                'd and excluded domains, it will be excluded.')
         .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(plugin.settings.currentsExcludeDomains).onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.currentsExcludeDomains = value.trim();
                 await saveSettingsOnly();
             })();
@@ -488,7 +445,7 @@ export const addNewsSettings = (
             dropdown
                 .setValue(plugin.settings.currentsRegion)
                 .onChange((value) => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.currentsRegion = value;
                         await saveSettingsOnly();
                     })();
@@ -505,7 +462,7 @@ export const addNewsSettings = (
             dropdown
                 .setValue(plugin.settings.currentsLanguage)
                 .onChange((value) => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.currentsLanguage = value;
                         await saveSettingsOnly();
                     })();
@@ -524,7 +481,7 @@ export const addNewsSettings = (
                 .setPlaceholder('5')
                 .setValue(String(plugin.settings.currentsLimit))
                 .onChange((value) => {
-                    void (async() => {
+                    void(async() => {
                         const parsed = Number.parseInt(value, 10);
                         if (Number.isNaN(parsed)) {
                             return;
@@ -537,30 +494,23 @@ export const addNewsSettings = (
                 });
         });
 
-    addTickerSpeedAndDirectionSetting(
-        newsGroupEl,
-        "News ticker speed and direction",
-        "Choose how fast the news ticker scrolls and its direction.",
-        plugin.settings.newsTickerSpeed,
-        plugin.settings.newsTickerDirection,
-        async(value) => {
-            plugin.settings.newsTickerSpeed = value;
-            await saveSettingsAndUpdateTickerSettings();
-        },
-        async(value) => {
-            plugin.settings.newsTickerDirection = value;
-            await saveSettingsAndUpdateTickerSettings();
-        }
-    );
+    addTickerSpeedAndDirectionSetting(newsGroupEl, "News ticker speed and direction", "Choose how fast the news ticker scrolls and its direction.", plugin.settings.newsTickerSpeed, plugin.settings.newsTickerDirection, async(value) => {
+        plugin.settings.newsTickerSpeed = value;
+        await saveSettingsAndUpdateTickerSettings();
+    }, async(value) => {
+        plugin.settings.newsTickerDirection = value;
+        await saveSettingsAndUpdateTickerSettings();
+    });
 
     new Setting(newsGroupEl)
         .setName("Show news footer")
-        .setDesc("Toggle the last refreshed info and refresh button for news. Beware of the daily limit of 20 requests with the free API key.")
+        .setDesc("Toggle the last refreshed info and refresh button for news. Beware of the daily " +
+                "limit of 20 requests with the free API key.")
         .addToggle(toggle => {
             toggle
                 .setValue(plugin.settings.showNewsFooter)
                 .onChange((value) => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.showNewsFooter = value;
                         await saveSettingsAndRefreshPanels();
                     })();
@@ -574,7 +524,7 @@ export const addNewsSettings = (
             toggle
                 .setValue(plugin.settings.showHeadlineMeta)
                 .onChange((value) => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.showHeadlineMeta = value;
                         await saveSettingsAndRefreshPanels();
                     })();
@@ -585,7 +535,7 @@ export const addNewsSettings = (
         .setName('Headline underline text color')
         .setDesc('Select any color.')
         .addColorPicker(color => color.setValue(plugin.settings.newsTextColor || '#ffffff').onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.newsTextColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
@@ -595,7 +545,7 @@ export const addNewsSettings = (
                 .setIcon('reset')
                 .setTooltip('Use theme default')
                 .onClick(() => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.newsTextColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
@@ -611,7 +561,7 @@ export const addNewsSettings = (
                 .setButtonText('Refresh')
                 .setCta()
                 .onClick(() => {
-                    void (async() => {
+                    void(async() => {
                         button.setDisabled(true);
                         button.setButtonText("Refreshing...");
                         try {

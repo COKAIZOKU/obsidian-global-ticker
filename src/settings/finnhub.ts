@@ -1,18 +1,9 @@
-import {
-    App,
-    Notice,
-    SecretComponent,
-    Setting,
-} from "obsidian";
+import {App, Notice, SecretComponent, Setting} from "obsidian";
 import type GlobalTicker from "../main";
-import type {TickerDirection, TickerSpeed} from "../settings";
+import type {TickerDirection, TickerSpeed}
+from "../settings";
 
-const createLinkFragment = (
-    leadingText: string,
-    linkText: string,
-    href: string,
-    trailingText: string
-): DocumentFragment => {
+const createLinkFragment = (leadingText : string, linkText : string, href : string, trailingText : string) : DocumentFragment => {
     const fragment = document.createDocumentFragment();
     if (leadingText) {
         fragment.append(document.createTextNode(leadingText));
@@ -27,59 +18,34 @@ const createLinkFragment = (
     return fragment;
 };
 
-const createSettingGroup = (containerEl: HTMLElement, title: string): HTMLElement => {
+const createSettingGroup = (containerEl : HTMLElement, title : string) : HTMLElement => {
     const groupEl = containerEl.createDiv({cls: "setting-group"});
     groupEl.createEl("div", {
         text: title,
-        cls: "setting-item-name setting-section-header",
+        cls: "setting-item-name setting-section-header"
     });
     return groupEl.createDiv({cls: "setting-items"});
 };
 
-const addTickerSpeedAndDirectionSetting = (
-    groupEl: HTMLElement,
-    name: string,
-    desc: string,
-    speedValue: TickerSpeed,
-    directionValue: TickerDirection,
-    onSpeedChange: (value: TickerSpeed) => Promise<void>,
-    onDirectionChange: (value: TickerDirection) => Promise<void>
-) => {
+const addTickerSpeedAndDirectionSetting = (groupEl : HTMLElement, name : string, desc : string, speedValue : TickerSpeed, directionValue : TickerDirection, onSpeedChange : (value : TickerSpeed) => Promise < void >, onDirectionChange : (value : TickerDirection) => Promise < void >) => {
     const setting = new Setting(groupEl)
         .setName(name)
         .setDesc(desc);
 
-    setting
-        .addDropdown(dropdown => dropdown
-            .addOption("very-slow", "Very slow")
-            .addOption("slow", "Slow")
-            .addOption("medium", "Medium")
-            .addOption("fast", "Fast")
-            .setValue(speedValue)
-            .onChange((value) => {
-                if (value !== "very-slow" && value !== "slow" && value !== "medium" && value !== "fast") {
-                    return;
-                }
-                void onSpeedChange(value);
-            }))
-        .addDropdown(dropdown => dropdown
-            .addOption("left", "Left")
-            .addOption("right", "Right")
-            .setValue(directionValue)
-            .onChange((value) => {
-                if (value !== "left" && value !== "right") {
-                    return;
-                }
-                void onDirectionChange(value);
-            }));
+    setting.addDropdown(dropdown => dropdown.addOption("very-slow", "Very slow").addOption("slow", "Slow").addOption("medium", "Medium").addOption("fast", "Fast").setValue(speedValue).onChange((value) => {
+        if (value !== "very-slow" && value !== "slow" && value !== "medium" && value !== "fast") {
+            return;
+        }
+        void onSpeedChange(value);
+    })).addDropdown(dropdown => dropdown.addOption("left", "Left").addOption("right", "Right").setValue(directionValue).onChange((value) => {
+        if (value !== "left" && value !== "right") {
+            return;
+        }
+        void onDirectionChange(value);
+    }));
 };
 
-export const addStocksSettings = (
-    containerEl: HTMLElement,
-    app: App,
-    plugin: GlobalTicker,
-    redisplay: () => void
-): void => {
+export const addStocksSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
     const saveSettingsOnly = async() => {
         await plugin.saveSettings();
     };
@@ -96,36 +62,29 @@ export const addStocksSettings = (
         plugin.updateTickerColors();
     };
 
-	// Stocks Settings Section
+    // Stocks Settings Section
 
-    const stocksGroupEl = createSettingGroup(containerEl, "Stocks settings");
+    const stocksGroupEl = createSettingGroup(containerEl, "Finnhub stocks settings");
 
-    const descFinnhubKey = createLinkFragment(
-        "Used to fetch stocks data. Get a free Finnhub API key by creating an account ",
-        "here",
-        "https://finnhub.io",
-        "."
-    );
+    const descFinnhubKey = createLinkFragment("Used to fetch stocks data. Get a free Finnhub API key by creating an account ", "here", "https://finnhub.io", ".");
 
     new Setting(stocksGroupEl)
         .setName('Finnhub API key')
         .setDesc(descFinnhubKey)
-        .addComponent(el => new SecretComponent(app, el)
-            .setValue(plugin.settings.finnhubApiKey)
-            .onChange((value) => {
-                void (async() => {
-                    const normalized = (value ?? "").trim();
-                    plugin.settings.finnhubApiKey = normalized;
-                    await saveSettingsOnly();
-                })();
-            }));
+        .addComponent(el => new SecretComponent(app, el).setValue(plugin.settings.finnhubApiKey).onChange((value) => {
+            void(async() => {
+                const normalized = (value ?? "").trim();
+                plugin.settings.finnhubApiKey = normalized;
+                await saveSettingsOnly();
+            })();
+        }));
 
     const descStockSymbols = "Comma-separated list of stocks ticker symbols to display.";
     new Setting(stocksGroupEl)
         .setName('Stocks symbols')
         .setDesc(descStockSymbols)
         .addTextArea(text => text.setPlaceholder('Aapl, msft, tsla').setValue(plugin.settings.finnhubSymbols).onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.finnhubSymbols = value;
                 await saveSettingsOnly();
             })();
@@ -135,7 +94,7 @@ export const addStocksSettings = (
         .setName('Stocks positive change color')
         .setDesc('Select any color.')
         .addColorPicker(color => color.setValue(plugin.settings.stockChangeColor || '#a68af6').onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.stockChangeColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
@@ -145,7 +104,7 @@ export const addStocksSettings = (
                 .setIcon('reset')
                 .setTooltip('Use theme default')
                 .onClick(() => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.stockChangeColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
@@ -157,7 +116,7 @@ export const addStocksSettings = (
         .setName('Stocks negative change color')
         .setDesc('Select any color.')
         .addColorPicker(color => color.setValue(plugin.settings.stockChangeNegativeColor || '#fb464c').onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.stockChangeNegativeColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
@@ -167,7 +126,7 @@ export const addStocksSettings = (
                 .setIcon('reset')
                 .setTooltip('Use theme default')
                 .onClick(() => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.stockChangeNegativeColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
@@ -179,7 +138,7 @@ export const addStocksSettings = (
         .setName('Stocks price color')
         .setDesc('Select any color.')
         .addColorPicker(color => color.setValue(plugin.settings.stockPriceColor || '#666666').onChange((value) => {
-            void (async() => {
+            void(async() => {
                 plugin.settings.stockPriceColor = value.trim();
                 await saveSettingsAndUpdateTickerColors();
             })();
@@ -189,7 +148,7 @@ export const addStocksSettings = (
                 .setIcon('reset')
                 .setTooltip('Use theme default')
                 .onClick(() => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.stockPriceColor = "";
                         await saveSettingsAndUpdateTickerColors();
                         redisplay();
@@ -197,21 +156,13 @@ export const addStocksSettings = (
                 });
         });
 
-    addTickerSpeedAndDirectionSetting(
-        stocksGroupEl,
-        "Stocks ticker speed and direction",
-        "Choose how fast the stocks ticker scrolls and its direction.",
-        plugin.settings.stockTickerSpeed,
-        plugin.settings.stockTickerDirection,
-        async(value) => {
-            plugin.settings.stockTickerSpeed = value;
-            await saveSettingsAndUpdateTickerSettings();
-        },
-        async(value) => {
-            plugin.settings.stockTickerDirection = value;
-            await saveSettingsAndUpdateTickerSettings();
-        }
-    );
+    addTickerSpeedAndDirectionSetting(stocksGroupEl, "Stocks ticker speed and direction", "Choose how fast the stocks ticker scrolls and its direction.", plugin.settings.stockTickerSpeed, plugin.settings.stockTickerDirection, async(value) => {
+        plugin.settings.stockTickerSpeed = value;
+        await saveSettingsAndUpdateTickerSettings();
+    }, async(value) => {
+        plugin.settings.stockTickerDirection = value;
+        await saveSettingsAndUpdateTickerSettings();
+    });
 
     new Setting(stocksGroupEl)
         .setName("Show stocks footer")
@@ -220,7 +171,7 @@ export const addStocksSettings = (
             toggle
                 .setValue(plugin.settings.showStockFooter)
                 .onChange((value) => {
-                    void (async() => {
+                    void(async() => {
                         plugin.settings.showStockFooter = value;
                         await saveSettingsAndRefreshPanels();
                     })();
@@ -235,7 +186,7 @@ export const addStocksSettings = (
                 .setButtonText('Refresh')
                 .setCta()
                 .onClick(() => {
-                    void (async() => {
+                    void(async() => {
                         button.setDisabled(true);
                         button.setButtonText("Refreshing...");
                         try {

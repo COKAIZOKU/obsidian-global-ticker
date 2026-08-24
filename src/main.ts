@@ -8,8 +8,8 @@ import {
   TickerSpeed,
 } from "./settings";
 import { applyTickerSpeed, initTicker } from "./ticker";
-import { fetchCurrentsHeadlines } from "./api/news";
-import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/stocks";
+import { fetchCurrentsHeadlines } from "./api/currents";
+import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/finnhub";
 
 // Constants related to ticker cloning logic
 const VIEW_TYPE_MY_PANEL = "global-ticker-panel";
