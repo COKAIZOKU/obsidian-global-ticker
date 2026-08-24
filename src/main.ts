@@ -4,7 +4,6 @@ import {
   GlobalTickerSettings,
   GlobalTickerSettingTab,
   TickerDirection,
-  TickerDisplayMode,
   TickerSpeed,
 } from "./settings";
 import { applyTickerSpeed, initTicker } from "./ticker";
@@ -282,7 +281,7 @@ interface LegacyTickerSettings {
   stockChangeColor?: string;
   stockChangeNegativeColor?: string;
   stockPriceColor?: string;
-  tickerDisplayMode?: "both" | "news" | "stocks";
+  tickerDisplayMode?: "both" | "news" | "stocks" | "currents" | "finnhub";
 }
 
 const normalizeSettings = (rawSettings: unknown): GlobalTickerSettings => {
@@ -322,10 +321,13 @@ const normalizeSettings = (rawSettings: unknown): GlobalTickerSettings => {
   if (!("finnhubPriceColor" in raw) && legacy.stockPriceColor !== undefined) {
     settings.finnhubPriceColor = legacy.stockPriceColor;
   }
-  if (legacy.tickerDisplayMode === "news") {
-    settings.tickerDisplayMode = "currents";
-  } else if (legacy.tickerDisplayMode === "stocks") {
-    settings.tickerDisplayMode = "finnhub";
+  if (!("showCurrentsTicker" in raw)) {
+    settings.showCurrentsTicker = legacy.tickerDisplayMode !== "stocks"
+      && legacy.tickerDisplayMode !== "finnhub";
+  }
+  if (!("showFinnhubTicker" in raw)) {
+    settings.showFinnhubTicker = legacy.tickerDisplayMode !== "news"
+      && legacy.tickerDisplayMode !== "currents";
   }
 
   return settings;
@@ -631,15 +633,12 @@ class MyPanelView extends ItemView {
     });
   }
 
-  // Main render function that sets up the sections based on display mode
-  // Display mode can be news only, stocks only or both, and the layout adjusts accordingly
+  // Main render function that sets up the enabled ticker sections
   private async render() {
     const container = this.containerEl; // main content area
     container.empty();
-    const displayMode: TickerDisplayMode =
-      this.plugin.settings.tickerDisplayMode ?? "both";
-    const showCurrents = displayMode !== "finnhub";
-    const showFinnhub = displayMode !== "currents";
+    const showCurrents = this.plugin.settings.showCurrentsTicker;
+    const showFinnhub = this.plugin.settings.showFinnhubTicker;
 
     this.currentsSectionEl = showCurrents
       ? container.createDiv({ cls: "currents-section" })
@@ -678,9 +677,7 @@ class MyPanelView extends ItemView {
 
   // Refresh headlines section, re-fetches headlines and updates the section
   async refreshHeadlines() {
-    const displayMode: TickerDisplayMode =
-      this.plugin.settings.tickerDisplayMode ?? "both";
-    if (displayMode === "finnhub") {
+    if (!this.plugin.settings.showCurrentsTicker) {
       return;
     }
     if (!this.currentsSectionEl) {
@@ -696,9 +693,7 @@ class MyPanelView extends ItemView {
 
   // Refresh stocks section, re-fetches stock quotes and updates the section
   async refreshFinnhub() {
-    const displayMode: TickerDisplayMode =
-      this.plugin.settings.tickerDisplayMode ?? "both";
-    if (displayMode === "currents") {
+    if (!this.plugin.settings.showFinnhubTicker) {
       return;
     }
     if (!this.finnhubSectionEl) {

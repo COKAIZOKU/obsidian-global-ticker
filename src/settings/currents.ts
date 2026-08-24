@@ -378,7 +378,21 @@ export const addCurrentsSettings = (containerEl : HTMLElement, app : App, plugin
 
     // News Settings Section
 
-    const currentsGroupEl = createSettingGroup(containerEl, "Current news settings");
+    const currentsGroupEl = createSettingGroup(containerEl, "Currents news settings");
+
+    new Setting(currentsGroupEl)
+        .setName("Show Currents ticker")
+        .setDesc("Fetch and Currents headlines in the panel")
+        .addToggle(toggle => {
+            toggle
+                .setValue(plugin.settings.showCurrentsTicker)
+                .onChange((value) => {
+                    void(async() => {
+                        plugin.settings.showCurrentsTicker = value;
+                        await saveSettingsAndRefreshPanels();
+                    })();
+                });
+        });
 
     const descCurrentsKey = createLinkFragment("Used to fetch live headlines. Get a free Currents API key by creating an account" +
             " ",

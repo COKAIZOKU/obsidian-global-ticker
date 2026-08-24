@@ -9,7 +9,6 @@ import {addFinnhubSettings} from "./settings/finnhub";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
 export type TickerDirection = "left" | "right";
-export type TickerDisplayMode = "both" | "currents" | "finnhub";
 
 export interface GlobalTickerSettings {
     mySetting : string;
@@ -22,7 +21,8 @@ export interface GlobalTickerSettings {
     useUsDateFormat : boolean;
     refreshOnAppOpen : boolean;
     pauseOnHover : boolean;
-    tickerDisplayMode : TickerDisplayMode;
+    showCurrentsTicker : boolean;
+    showFinnhubTicker : boolean;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
     currentsTextColor : string;
@@ -51,7 +51,8 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     useUsDateFormat: false,
     refreshOnAppOpen: false,
     pauseOnHover: true,
-    tickerDisplayMode: "both",
+    showCurrentsTicker: true,
+    showFinnhubTicker: true,
     showHeadlineMeta: true,
     currentsTextColor: "",
     finnhubChangeColor: "",
@@ -100,26 +101,6 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 		// Global Settings Section
 
         const globalGroupEl = createSettingGroup(containerEl, "Global settings");
-
-        new Setting(globalGroupEl)
-            .setName("Ticker display")
-            .setDesc("Choose which tickers to show in the panel.")
-            .addDropdown(dropdown => {
-                dropdown.addOption("both", "Both");
-                dropdown.addOption("currents", "News only");
-                dropdown.addOption("finnhub", "Stocks only");
-                dropdown
-                    .setValue(this.plugin.settings.tickerDisplayMode)
-                    .onChange((value) => {
-                        void (async() => {
-                            if (value !== "both" && value !== "currents" && value !== "finnhub") {
-                                return;
-                            }
-                            this.plugin.settings.tickerDisplayMode = value;
-                            await saveSettingsAndRefreshPanels();
-                        })();
-                    });
-            });
 
         new Setting(globalGroupEl)
             .setName("Date format")

@@ -66,6 +66,20 @@ export const addFinnhubSettings = (containerEl : HTMLElement, app : App, plugin 
 
     const finnhubGroupEl = createSettingGroup(containerEl, "Finnhub stocks settings");
 
+    new Setting(finnhubGroupEl)
+        .setName("Show Finnhub ticker")
+        .setDesc("Fetch and Finnhub stocks in the panel")
+        .addToggle(toggle => {
+            toggle
+                .setValue(plugin.settings.showFinnhubTicker)
+                .onChange((value) => {
+                    void(async() => {
+                        plugin.settings.showFinnhubTicker = value;
+                        await saveSettingsAndRefreshPanels();
+                    })();
+                });
+        });
+
     const descFinnhubKey = createLinkFragment("Used to fetch stocks data. Get a free Finnhub API key by creating an account ", "here", "https://finnhub.io", ".");
 
     new Setting(finnhubGroupEl)
