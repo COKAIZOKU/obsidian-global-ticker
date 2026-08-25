@@ -719,14 +719,6 @@ export default class GlobalTicker extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('rss', 'Open global ticker', async () => {
-			// Called when the user clicks the icon.
-			const leaf = this.app.workspace.getLeaf(true);
-			await leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
-			await this.app.workspace.revealLeaf(leaf);
-		});
-
 		// This adds a view to the workspace, which can be opened via the command palette, ribbon icon, or programmatically.
 		this.registerView(
 			VIEW_TYPE_MY_PANEL,
