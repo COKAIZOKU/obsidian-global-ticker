@@ -4,12 +4,11 @@ import {
   GlobalTickerSettings,
   GlobalTickerSettingTab,
   TickerDirection,
-  TickerDisplayMode,
   TickerSpeed,
 } from "./settings";
 import { applyTickerSpeed, initTicker } from "./ticker";
-import { fetchCurrentsHeadlines } from "./api/news";
-import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/stocks";
+import { fetchCurrentsHeadlines } from "./api/currents";
+import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/finnhub";
 
 // Constants related to ticker cloning logic
 const VIEW_TYPE_MY_PANEL = "global-ticker-panel";
@@ -271,97 +270,160 @@ interface PluginData {
   stockQuotesCache?: StockQuotesCache | null;
 }
 
+interface LegacyTickerSettings {
+  newsTickerSpeed?: TickerSpeed;
+  stockTickerSpeed?: TickerSpeed;
+  newsTickerDirection?: TickerDirection;
+  stockTickerDirection?: TickerDirection;
+  showNewsFooter?: boolean;
+  showStockFooter?: boolean;
+  newsTextColor?: string;
+  stockChangeColor?: string;
+  stockChangeNegativeColor?: string;
+  stockPriceColor?: string;
+  tickerDisplayMode?: "both" | "news" | "stocks" | "currents" | "finnhub";
+}
+
+const normalizeSettings = (rawSettings: unknown): GlobalTickerSettings => {
+  const raw = rawSettings && typeof rawSettings === "object"
+    ? rawSettings as Record<string, unknown>
+    : {};
+  const legacy = raw as LegacyTickerSettings;
+  const settings = Object.assign({}, DEFAULT_SETTINGS, raw) as GlobalTickerSettings;
+
+  if (!("currentsTickerSpeed" in raw) && legacy.newsTickerSpeed) {
+    settings.currentsTickerSpeed = legacy.newsTickerSpeed;
+  }
+  if (!("finnhubTickerSpeed" in raw) && legacy.stockTickerSpeed) {
+    settings.finnhubTickerSpeed = legacy.stockTickerSpeed;
+  }
+  if (!("currentsTickerDirection" in raw) && legacy.newsTickerDirection) {
+    settings.currentsTickerDirection = legacy.newsTickerDirection;
+  }
+  if (!("finnhubTickerDirection" in raw) && legacy.stockTickerDirection) {
+    settings.finnhubTickerDirection = legacy.stockTickerDirection;
+  }
+  if (!("showCurrentsFooter" in raw) && legacy.showNewsFooter !== undefined) {
+    settings.showCurrentsFooter = legacy.showNewsFooter;
+  }
+  if (!("showFinnhubFooter" in raw) && legacy.showStockFooter !== undefined) {
+    settings.showFinnhubFooter = legacy.showStockFooter;
+  }
+  if (!("currentsTextColor" in raw) && legacy.newsTextColor !== undefined) {
+    settings.currentsTextColor = legacy.newsTextColor;
+  }
+  if (!("finnhubChangeColor" in raw) && legacy.stockChangeColor !== undefined) {
+    settings.finnhubChangeColor = legacy.stockChangeColor;
+  }
+  if (!("finnhubChangeNegativeColor" in raw) && legacy.stockChangeNegativeColor !== undefined) {
+    settings.finnhubChangeNegativeColor = legacy.stockChangeNegativeColor;
+  }
+  if (!("finnhubPriceColor" in raw) && legacy.stockPriceColor !== undefined) {
+    settings.finnhubPriceColor = legacy.stockPriceColor;
+  }
+  if (!("showCurrentsTicker" in raw)) {
+    settings.showCurrentsTicker = legacy.tickerDisplayMode !== "stocks"
+      && legacy.tickerDisplayMode !== "finnhub";
+  }
+  if (!("showFinnhubTicker" in raw)) {
+    settings.showFinnhubTicker = legacy.tickerDisplayMode !== "news"
+      && legacy.tickerDisplayMode !== "currents";
+  }
+
+  return settings;
+};
+
 // The main view class for the panel
 class MyPanelView extends ItemView {
 
   private readonly plugin: GlobalTicker;
 
-  private newsSpeed: TickerSpeed;
-  private stockSpeed: TickerSpeed;
+  private currentsSpeed: TickerSpeed;
+  private finnhubSpeed: TickerSpeed;
 
-  private newsDirection: TickerDirection;
-  private stockDirection: TickerDirection;
+  private currentsDirection: TickerDirection;
+  private finnhubDirection: TickerDirection;
 
-  private newsTextColor: string;
-  private stockPriceColor: string;
-  private stockChangeColor: string;
-  private stockChangeNegativeColor: string;
+  private currentsTextColor: string;
+  private finnhubPriceColor: string;
+  private finnhubChangeColor: string;
+  private finnhubChangeNegativeColor: string;
   
-  private stockSectionEl?: HTMLElement;
-  private newsSectionEl?: HTMLElement;
+  private finnhubSectionEl?: HTMLElement;
+  private currentsSectionEl?: HTMLElement;
   
-  private stockFooterGroupEl?: HTMLElement;
-  private newsFooterGroupEl?: HTMLElement;
+  private finnhubFooterGroupEl?: HTMLElement;
+  private currentsFooterGroupEl?: HTMLElement;
 
   constructor(
     leaf: WorkspaceLeaf,
     plugin: GlobalTicker,
-    newsSpeed: TickerSpeed,
-    stockSpeed: TickerSpeed,
-    newsDirection: TickerDirection,
-    stockDirection: TickerDirection,
-    newsTextColor: string,
-    stockPriceColor: string,
-    stockChangeColor: string,
-    stockChangeNegativeColor: string
+    currentsSpeed: TickerSpeed,
+    finnhubSpeed: TickerSpeed,
+    currentsDirection: TickerDirection,
+    finnhubDirection: TickerDirection,
+    currentsTextColor: string,
+    finnhubPriceColor: string,
+    finnhubChangeColor: string,
+    finnhubChangeNegativeColor: string
   ) {
     super(leaf);
     this.plugin = plugin;
-    this.newsSpeed = newsSpeed;
-    this.stockSpeed = stockSpeed;
-    this.newsDirection = newsDirection;
-    this.stockDirection = stockDirection;
-    this.newsTextColor = newsTextColor;
-    this.stockPriceColor = stockPriceColor;
-    this.stockChangeColor = stockChangeColor;
-    this.stockChangeNegativeColor = stockChangeNegativeColor;
+    this.currentsSpeed = currentsSpeed;
+    this.finnhubSpeed = finnhubSpeed;
+    this.currentsDirection = currentsDirection;
+    this.finnhubDirection = finnhubDirection;
+    this.currentsTextColor = currentsTextColor;
+    this.finnhubPriceColor = finnhubPriceColor;
+    this.finnhubChangeColor = finnhubChangeColor;
+    this.finnhubChangeNegativeColor = finnhubChangeNegativeColor;
   }
 
   // Update ticker settings
   setTickerSettings(
-    newsSpeed: TickerSpeed,
-    stockSpeed: TickerSpeed,
-    newsDirection: TickerDirection,
-    stockDirection: TickerDirection
+    currentsSpeed: TickerSpeed,
+    finnhubSpeed: TickerSpeed,
+    currentsDirection: TickerDirection,
+    finnhubDirection: TickerDirection
   ) {
-    this.newsSpeed = newsSpeed;
-    this.stockSpeed = stockSpeed;
-    this.newsDirection = newsDirection;
-    this.stockDirection = stockDirection;
+    this.currentsSpeed = currentsSpeed;
+    this.finnhubSpeed = finnhubSpeed;
+    this.currentsDirection = currentsDirection;
+    this.finnhubDirection = finnhubDirection;
     this.applyTickerSettings();
   }
 
   // Update stock color settings
   setTickerColors(
-    newsTextColor: string,
-    stockPriceColor: string,
-    stockChangeColor: string,
-    stockChangeNegativeColor: string
+    currentsTextColor: string,
+    finnhubPriceColor: string,
+    finnhubChangeColor: string,
+    finnhubChangeNegativeColor: string
   ) {
-    this.newsTextColor = newsTextColor;
-    this.stockPriceColor = stockPriceColor;
-    this.stockChangeColor = stockChangeColor;
-    this.stockChangeNegativeColor = stockChangeNegativeColor;
+    this.currentsTextColor = currentsTextColor;
+    this.finnhubPriceColor = finnhubPriceColor;
+    this.finnhubChangeColor = finnhubChangeColor;
+    this.finnhubChangeNegativeColor = finnhubChangeNegativeColor;
     this.applyColorVars();
   }
   
   // Apply ticker settings to the scrollers
   private applyTickerSettings() {
-    const newsScroller = this.containerEl.querySelector<HTMLElement>(
-      '.scroller[data-ticker="news"]'
+    const currentsScroller = this.containerEl.querySelector<HTMLElement>(
+      '.scroller[data-ticker="currents"]'
     );
-    if (newsScroller) {
-      this.applyScrollerSettings(newsScroller, this.newsSpeed, this.newsDirection);
+    if (currentsScroller) {
+      this.applyScrollerSettings(currentsScroller, this.currentsSpeed, this.currentsDirection);
     }
 
-    const stockScroller = this.containerEl.querySelector<HTMLElement>(
-      '.scroller[data-ticker="stock"]'
+    const finnhubScroller = this.containerEl.querySelector<HTMLElement>(
+      '.scroller[data-ticker="finnhub"]'
     );
-    if (stockScroller) {
+    if (finnhubScroller) {
       this.applyScrollerSettings(
-        stockScroller,
-        this.stockSpeed,
-        this.stockDirection
+        finnhubScroller,
+        this.finnhubSpeed,
+        this.finnhubDirection
       );
     }
   }
@@ -412,12 +474,12 @@ class MyPanelView extends ItemView {
 
   // Apply stock color variables to the stock ticker
   private applyColorVars() {
-    this.setColorVar("--news-text-color", this.newsTextColor);
-    this.setColorVar("--stock-price-color", this.stockPriceColor);
-    this.setColorVar("--stock-change-color", this.stockChangeColor);
+    this.setColorVar("--currents-text-color", this.currentsTextColor);
+    this.setColorVar("--finnhub-price-color", this.finnhubPriceColor);
+    this.setColorVar("--finnhub-change-color", this.finnhubChangeColor);
     this.setColorVar(
-      "--stock-change-negative-color",
-      this.stockChangeNegativeColor
+      "--finnhub-change-negative-color",
+      this.finnhubChangeNegativeColor
     );
   }
   
@@ -447,12 +509,12 @@ class MyPanelView extends ItemView {
 
   // Render the news ticker section
   // Applies headlines, speed and direction settings
-  private async renderNewsSection(section: HTMLElement) {
+  private async renderCurrentsSection(section: HTMLElement) {
     section.empty();
     const scroller = section.createDiv({ cls: "scroller" });
-    scroller.dataset.ticker = "news";
-    scroller.dataset.speed = this.newsSpeed;
-    scroller.dataset.direction = this.newsDirection;
+    scroller.dataset.ticker = "currents";
+    scroller.dataset.speed = this.currentsSpeed;
+    scroller.dataset.direction = this.currentsDirection;
     scroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
 
     const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
@@ -462,27 +524,27 @@ class MyPanelView extends ItemView {
 
   // Render the stocks ticker section
   // Applies stock data, speed, direction and color settings
-  private async renderStocksSection(section: HTMLElement): Promise<number | null> {
+  private async renderFinnhubSection(section: HTMLElement): Promise<number | null> {
     section.empty();
-    const stockScroller = section.createDiv({ cls: "scroller" });
-    stockScroller.dataset.ticker = "stock";
-    stockScroller.dataset.speed = this.stockSpeed;
-    stockScroller.dataset.direction = this.stockDirection;
-    stockScroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
+    const finnhubScroller = section.createDiv({ cls: "scroller" });
+    finnhubScroller.dataset.ticker = "finnhub";
+    finnhubScroller.dataset.speed = this.finnhubSpeed;
+    finnhubScroller.dataset.direction = this.finnhubDirection;
+    finnhubScroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
 
-    const stockList = stockScroller.createEl("ul", { cls: ["tag-list", "scroller__inner", "stock-list"] });
+    const finnhubList = finnhubScroller.createEl("ul", { cls: ["tag-list", "scroller__inner", "finnhub-list"] });
     const quotes = await this.plugin.getStockQuotes();
-    const stocks = quotes.length > 0
+    const finnhubQuotes = quotes.length > 0
       ? quotes.map(toStockDisplayItem)
       : FALLBACK_STOCKS;
     const lastRefreshedAt =
       quotes.length > 0 ? this.plugin.getStockLastRefreshedAt() : null;
 
-    stocks.forEach(({ symbol, priceText, changeText, isNegative }) => {
-      const item = stockList.createEl("li", { cls: "stock-item" });
+    finnhubQuotes.forEach(({ symbol, priceText, changeText, isNegative }) => {
+      const item = finnhubList.createEl("li", { cls: "finnhub-item" });
       item.createSpan({ text: symbol });
-      item.createSpan({ text: priceText, cls: "stock-price" });
-      const changeSpan = item.createSpan({ text: changeText, cls: "stock-change" });
+      item.createSpan({ text: priceText, cls: "finnhub-price" });
+      const changeSpan = item.createSpan({ text: changeText, cls: "finnhub-change" });
       if (isNegative) {
         changeSpan.addClass("is-negative");
       }
@@ -494,23 +556,23 @@ class MyPanelView extends ItemView {
 
   // Footers, both have the same logic but are separated to allow independent toggling
   // Render the footer for the news ticker
-  private renderNewsFooter(group: HTMLElement) {
+  private renderCurrentsFooter(group: HTMLElement) {
     group.empty();
     group.createDiv({ cls: "ticker-divider" });
 
-    if (!this.plugin.settings.showNewsFooter) {
+    if (!this.plugin.settings.showCurrentsFooter) {
       return;
     }
 
-    const newsFooter = group.createDiv({ cls: "ticker-footer" });
-    newsFooter.createSpan({
+    const currentsFooter = group.createDiv({ cls: "ticker-footer" });
+    currentsFooter.createSpan({
       cls: "ticker-refresh-time",
       text: formatLastRefreshed(
         this.plugin.getHeadlinesLastRefreshedAt(),
         this.plugin.settings.useUsDateFormat
       ),
     });
-    const refreshNewsButton = newsFooter.createEl("button", {
+    const refreshCurrentsButton = currentsFooter.createEl("button", {
       cls: ["clickable-icon", "ticker-refresh-button"],
       attr: {
         "aria-label": "Refresh headlines",
@@ -518,14 +580,14 @@ class MyPanelView extends ItemView {
         title: "Refresh headlines",
       },
     });
-    setIcon(refreshNewsButton, "refresh-cw");
-    refreshNewsButton.addEventListener("click", () => {
+    setIcon(refreshCurrentsButton, "refresh-cw");
+    refreshCurrentsButton.addEventListener("click", () => {
       void (async () => {
-        refreshNewsButton.disabled = true;
+        refreshCurrentsButton.disabled = true;
         try {
           await this.plugin.refreshHeadlines();
         } finally {
-          refreshNewsButton.disabled = false;
+          refreshCurrentsButton.disabled = false;
         }
       })();
     });
@@ -534,23 +596,23 @@ class MyPanelView extends ItemView {
   }
 
   // Render the footer for the stocks ticker
-  private renderStockFooter(group: HTMLElement, lastRefreshedAt: number | null) {
+  private renderFinnhubFooter(group: HTMLElement, lastRefreshedAt: number | null) {
     group.empty();
 
-    if (!this.plugin.settings.showStockFooter) {
+    if (!this.plugin.settings.showFinnhubFooter) {
       return;
     }
 
     group.createDiv({ cls: "ticker-divider" });
-    const stockFooter = group.createDiv({ cls: "ticker-footer" });
-    stockFooter.createSpan({
+    const finnhubFooter = group.createDiv({ cls: "ticker-footer" });
+    finnhubFooter.createSpan({
       cls: "ticker-refresh-time",
       text: formatLastRefreshed(
         lastRefreshedAt,
         this.plugin.settings.useUsDateFormat
       ),
     });
-    const refreshButton = stockFooter.createEl("button", {
+    const refreshFinnhubButton = finnhubFooter.createEl("button", {
       cls: ["clickable-icon", "ticker-refresh-button"],
       attr: {
         "aria-label": "Refresh stock quotes",
@@ -558,52 +620,49 @@ class MyPanelView extends ItemView {
         title: "Refresh stock quotes",
       },
     });
-    setIcon(refreshButton, "refresh-cw");
-    refreshButton.addEventListener("click", () => {
+    setIcon(refreshFinnhubButton, "refresh-cw");
+    refreshFinnhubButton.addEventListener("click", () => {
       void (async () => {
-        refreshButton.disabled = true;
+        refreshFinnhubButton.disabled = true;
         try {
-          await this.plugin.refreshStocks();
+          await this.plugin.refreshFinnhub();
         } finally {
-          refreshButton.disabled = false;
+          refreshFinnhubButton.disabled = false;
         }
       })();
     });
   }
 
-  // Main render function that sets up the sections based on display mode
-  // Display mode can be news only, stocks only or both, and the layout adjusts accordingly
+  // Main render function that sets up the enabled ticker sections
   private async render() {
     const container = this.containerEl; // main content area
     container.empty();
-    const displayMode: TickerDisplayMode =
-      this.plugin.settings.tickerDisplayMode ?? "both";
-    const showNews = displayMode !== "stocks";
-    const showStocks = displayMode !== "news";
+    const showCurrents = this.plugin.settings.showCurrentsTicker;
+    const showFinnhub = this.plugin.settings.showFinnhubTicker;
 
-    this.newsSectionEl = showNews
-      ? container.createDiv({ cls: "news-section" })
+    this.currentsSectionEl = showCurrents
+      ? container.createDiv({ cls: "currents-section" })
       : undefined;
-    this.newsFooterGroupEl = showNews
+    this.currentsFooterGroupEl = showCurrents
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
-    this.stockSectionEl = showStocks
-      ? container.createDiv({ cls: "stock-section" })
+    this.finnhubSectionEl = showFinnhub
+      ? container.createDiv({ cls: "finnhub-section" })
       : undefined;
-    this.stockFooterGroupEl = showStocks
+    this.finnhubFooterGroupEl = showFinnhub
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
 
-    if (showNews && this.newsSectionEl && this.newsFooterGroupEl) {
-      await this.renderNewsSection(this.newsSectionEl);
-      this.renderNewsFooter(this.newsFooterGroupEl);
+    if (showCurrents && this.currentsSectionEl && this.currentsFooterGroupEl) {
+      await this.renderCurrentsSection(this.currentsSectionEl);
+      this.renderCurrentsFooter(this.currentsFooterGroupEl);
     }
 
-    if (showStocks && this.stockSectionEl && this.stockFooterGroupEl) {
-      const stockLastRefreshedAt = await this.renderStocksSection(
-        this.stockSectionEl
+    if (showFinnhub && this.finnhubSectionEl && this.finnhubFooterGroupEl) {
+      const finnhubLastRefreshedAt = await this.renderFinnhubSection(
+        this.finnhubSectionEl
       );
-      this.renderStockFooter(this.stockFooterGroupEl, stockLastRefreshedAt);
+      this.renderFinnhubFooter(this.finnhubFooterGroupEl, finnhubLastRefreshedAt);
     }
     initTicker(container);
   }
@@ -618,38 +677,34 @@ class MyPanelView extends ItemView {
 
   // Refresh headlines section, re-fetches headlines and updates the section
   async refreshHeadlines() {
-    const displayMode: TickerDisplayMode =
-      this.plugin.settings.tickerDisplayMode ?? "both";
-    if (displayMode === "stocks") {
+    if (!this.plugin.settings.showCurrentsTicker) {
       return;
     }
-    if (!this.newsSectionEl) {
+    if (!this.currentsSectionEl) {
       await this.render();
       return;
     }
-    await this.renderNewsSection(this.newsSectionEl);
-    if (this.newsFooterGroupEl) {
-      this.renderNewsFooter(this.newsFooterGroupEl);
+    await this.renderCurrentsSection(this.currentsSectionEl);
+    if (this.currentsFooterGroupEl) {
+      this.renderCurrentsFooter(this.currentsFooterGroupEl);
     }
-    initTicker(this.newsSectionEl);
+    initTicker(this.currentsSectionEl);
   }
 
   // Refresh stocks section, re-fetches stock quotes and updates the section
-  async refreshStocks() {
-    const displayMode: TickerDisplayMode =
-      this.plugin.settings.tickerDisplayMode ?? "both";
-    if (displayMode === "news") {
+  async refreshFinnhub() {
+    if (!this.plugin.settings.showFinnhubTicker) {
       return;
     }
-    if (!this.stockSectionEl) {
+    if (!this.finnhubSectionEl) {
       await this.render();
       return;
     }
-    const stockLastRefreshedAt = await this.renderStocksSection(this.stockSectionEl);
-    if (this.stockFooterGroupEl) {
-      this.renderStockFooter(this.stockFooterGroupEl, stockLastRefreshedAt);
+    const finnhubLastRefreshedAt = await this.renderFinnhubSection(this.finnhubSectionEl);
+    if (this.finnhubFooterGroupEl) {
+      this.renderFinnhubFooter(this.finnhubFooterGroupEl, finnhubLastRefreshedAt);
     }
-    initTicker(this.stockSectionEl);
+    initTicker(this.finnhubSectionEl);
   }
 }
 
@@ -664,14 +719,6 @@ export default class GlobalTicker extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('rss', 'Open global ticker', async () => {
-			// Called when the user clicks the icon.
-			const leaf = this.app.workspace.getLeaf(true);
-			await leaf.setViewState({type: VIEW_TYPE_MY_PANEL, active: true});
-			await this.app.workspace.revealLeaf(leaf);
-		});
-
 		// This adds a view to the workspace, which can be opened via the command palette, ribbon icon, or programmatically.
 		this.registerView(
 			VIEW_TYPE_MY_PANEL,
@@ -679,14 +726,14 @@ export default class GlobalTicker extends Plugin {
 				new MyPanelView(
 					leaf,
 					this,
-					this.settings.newsTickerSpeed,
-					this.settings.stockTickerSpeed,
-					this.settings.newsTickerDirection,
-					this.settings.stockTickerDirection,
-					this.settings.newsTextColor,
-					this.settings.stockPriceColor,
-					this.settings.stockChangeColor,
-					this.settings.stockChangeNegativeColor
+					this.settings.currentsTickerSpeed,
+					this.settings.finnhubTickerSpeed,
+					this.settings.currentsTickerDirection,
+					this.settings.finnhubTickerDirection,
+					this.settings.currentsTextColor,
+					this.settings.finnhubPriceColor,
+					this.settings.finnhubChangeColor,
+					this.settings.finnhubChangeNegativeColor
 				)
 		);
 
@@ -1072,7 +1119,7 @@ export default class GlobalTicker extends Plugin {
 	}
 
   // Refresh stocks section, clears cache and re-fetches data, then updates all open panels
-	async refreshStocks() {
+	async refreshFinnhub() {
     const symbols = normalizeStockSymbols(this.settings.finnhubSymbols);
     if (symbols.length === 0) {
       return false;
@@ -1099,7 +1146,7 @@ export default class GlobalTicker extends Plugin {
 			leaves.map(async (leaf) => {
 				const view = leaf.view;
 				if (view instanceof MyPanelView) {
-					await view.refreshStocks();
+					await view.refreshFinnhub();
 				}
 			})
 		);
@@ -1153,10 +1200,10 @@ export default class GlobalTicker extends Plugin {
 			const view = leaf.view;
 			if (view instanceof MyPanelView) {
 				view.setTickerSettings(
-					this.settings.newsTickerSpeed,
-					this.settings.stockTickerSpeed,
-					this.settings.newsTickerDirection,
-					this.settings.stockTickerDirection
+					this.settings.currentsTickerSpeed,
+					this.settings.finnhubTickerSpeed,
+					this.settings.currentsTickerDirection,
+					this.settings.finnhubTickerDirection
 				);
 			}
 		});
@@ -1169,10 +1216,10 @@ export default class GlobalTicker extends Plugin {
 			const view = leaf.view;
 			if (view instanceof MyPanelView) {
 				view.setTickerColors(
-					this.settings.newsTextColor,
-					this.settings.stockPriceColor,
-					this.settings.stockChangeColor,
-					this.settings.stockChangeNegativeColor
+					this.settings.currentsTextColor,
+					this.settings.finnhubPriceColor,
+					this.settings.finnhubChangeColor,
+					this.settings.finnhubChangeNegativeColor
 				);
 			}
 		});
@@ -1183,12 +1230,7 @@ export default class GlobalTicker extends Plugin {
 		const data: unknown = await this.loadData();
 		if (data && typeof data === "object" && "settings" in data) {
 			const typedData = data as PluginData;
-			const mergedSettings = Object.assign(
-				{},
-				DEFAULT_SETTINGS,
-				typedData.settings ?? {}
-			);
-			this.settings = mergedSettings;
+			this.settings = normalizeSettings(typedData.settings);
 			this.headlinesCache = typedData.headlinesCache ?? null;
       if (this.headlinesCache && Array.isArray(this.headlinesCache.headlines)) {
         const normalized = this.headlinesCache.headlines
@@ -1216,9 +1258,7 @@ export default class GlobalTicker extends Plugin {
 			return;
 		}
     
-		const rawSettings = data as Partial<GlobalTickerSettings>;
-		const mergedSettings = Object.assign({}, DEFAULT_SETTINGS, rawSettings);
-		this.settings = mergedSettings;
+		this.settings = normalizeSettings(data);
 		this.headlinesCache = null;
 		this.stockQuotesCache = null;
 	}
