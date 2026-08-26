@@ -1,7 +1,10 @@
-import {App, Notice, SecretComponent, Setting} from "obsidian";
+import {Notice, SecretComponent} from "obsidian";
+import type {SettingDefinitionItem} from "obsidian";
 import type GlobalTicker from "../main";
-import type {TickerDirection, TickerSpeed}
-from "../settings";
+import type {GlobalTickerSettings} from "../settings";
+import {getTextFaintHex} from "./color";
+
+type SettingsKey = keyof GlobalTickerSettings & string;
 
 const createLinkFragment = (leadingText : string, linkText : string, href : string, trailingText : string) : DocumentFragment => {
     const fragment = document.createDocumentFragment();
@@ -18,581 +21,157 @@ const createLinkFragment = (leadingText : string, linkText : string, href : stri
     return fragment;
 };
 
-const createSettingGroup = (containerEl : HTMLElement, title : string) : HTMLElement => {
-    const groupEl = containerEl.createDiv({cls: "setting-group"});
-    groupEl.createEl("div", {
-        text: title,
-        cls: "setting-item-name setting-section-header"
-    });
-    return groupEl.createDiv({cls: "setting-items"});
+const CURRENTS_REGIONS : Record < string, string > = {
+    "": "All regions",
+    EU: "Europe", ASIA: "Asia", INT: "International", AF: "Afghanistan", AR: "Argentina",
+    AU: "Australia", AT: "Austria", BD: "Bangladesh", BE: "Belgium", BO: "Bolivia",
+    BA: "Bosnia", BR: "Brazil", KH: "Cambodia", CA: "Canada", CL: "Chile", CN: "China",
+    CO: "Colombia", CZ: "Czech Republic", DK: "Denmark", EC: "Ecuador", EG: "Egypt",
+    EE: "Estonia", FI: "Finland", FR: "France", DE: "Germany", GH: "Ghana", GR: "Greece",
+    HK: "Hong Kong", HU: "Hungary", IN: "India", ID: "Indonesia", IR: "Iran", IQ: "Iraq",
+    IE: "Ireland", IL: "Israel", IT: "Italy", JP: "Japan", KE: "Kenya", KW: "Kuwait",
+    LB: "Lebanon", LU: "Luxembourg", MY: "Malaysia", MX: "Mexico", MM: "Myanmar",
+    NP: "Nepal", NL: "Netherlands", NZ: "New Zealand", NG: "Nigeria", NK: "North Korea",
+    NO: "Norway", PK: "Pakistan", PS: "Palestine", PA: "Panama", PY: "Paraguay", PE: "Peru",
+    PH: "Philippines", PL: "Poland", PT: "Portugal", QA: "Qatar", RO: "Romania", RU: "Russia",
+    SA: "Saudi Arabia", RS: "Serbia", SG: "Singapore", SI: "Slovenia", KR: "South Korea",
+    ES: "Spain", SE: "Sweden", CH: "Switzerland", TW: "Taiwan", TH: "Thailand", TR: "Turkey",
+    AE: "United Arab Emirates", GB: "United Kingdom", US: "United States", UY: "Uruguay",
+    VE: "Venezuela", VN: "Vietnam", ZW: "Zimbabwe",
 };
 
-const CURRENTS_REGIONS : Array < [string, string] > = [
-    [
-        "", "All regions"
-    ],
-    [
-        "EU", "Europe"
-    ],
-    [
-        "ASIA", "Asia"
-    ],
-    [
-        "INT", "International"
-    ],
-    [
-        "AF", "Afghanistan"
-    ],
-    [
-        "AR", "Argentina"
-    ],
-    [
-        "AU", "Australia"
-    ],
-    [
-        "AT", "Austria"
-    ],
-    [
-        "BD", "Bangladesh"
-    ],
-    [
-        "BE", "Belgium"
-    ],
-    [
-        "BO", "Bolivia"
-    ],
-    [
-        "BA", "Bosnia"
-    ],
-    [
-        "BR", "Brazil"
-    ],
-    [
-        "KH", "Cambodia"
-    ],
-    [
-        "CA", "Canada"
-    ],
-    [
-        "CL", "Chile"
-    ],
-    [
-        "CN", "China"
-    ],
-    [
-        "CO", "Colombia"
-    ],
-    [
-        "CZ", "Czech Republic"
-    ],
-    [
-        "DK", "Denmark"
-    ],
-    [
-        "EC", "Ecuador"
-    ],
-    [
-        "EG", "Egypt"
-    ],
-    [
-        "EE", "Estonia"
-    ],
-    [
-        "FI", "Finland"
-    ],
-    [
-        "FR", "France"
-    ],
-    [
-        "DE", "Germany"
-    ],
-    [
-        "GH", "Ghana"
-    ],
-    [
-        "GR", "Greece"
-    ],
-    [
-        "HK", "Hong Kong"
-    ],
-    [
-        "HU", "Hungary"
-    ],
-    [
-        "IN", "India"
-    ],
-    [
-        "ID", "Indonesia"
-    ],
-    [
-        "IR", "Iran"
-    ],
-    [
-        "IQ", "Iraq"
-    ],
-    [
-        "IE", "Ireland"
-    ],
-    [
-        "IL", "Israel"
-    ],
-    [
-        "IT", "Italy"
-    ],
-    [
-        "JP", "Japan"
-    ],
-    [
-        "KE", "Kenya"
-    ],
-    [
-        "KW", "Kuwait"
-    ],
-    [
-        "LB", "Lebanon"
-    ],
-    [
-        "LU", "Luxembourg"
-    ],
-    [
-        "MY", "Malaysia"
-    ],
-    [
-        "MX", "Mexico"
-    ],
-    [
-        "MM", "Myanmar"
-    ],
-    [
-        "NP", "Nepal"
-    ],
-    [
-        "NL", "Netherlands"
-    ],
-    [
-        "NZ", "New Zealand"
-    ],
-    [
-        "NG", "Nigeria"
-    ],
-    [
-        "NK", "North Korea"
-    ],
-    [
-        "NO", "Norway"
-    ],
-    [
-        "PK", "Pakistan"
-    ],
-    [
-        "PS", "Palestine"
-    ],
-    [
-        "PA", "Panama"
-    ],
-    [
-        "PY", "Paraguay"
-    ],
-    [
-        "PE", "Peru"
-    ],
-    [
-        "PH", "Philippines"
-    ],
-    [
-        "PL", "Poland"
-    ],
-    [
-        "PT", "Portugal"
-    ],
-    [
-        "QA", "Qatar"
-    ],
-    [
-        "RO", "Romania"
-    ],
-    [
-        "RU", "Russia"
-    ],
-    [
-        "SA", "Saudi Arabia"
-    ],
-    [
-        "RS", "Serbia"
-    ],
-    [
-        "SG", "Singapore"
-    ],
-    [
-        "SI", "Slovenia"
-    ],
-    [
-        "KR", "South Korea"
-    ],
-    [
-        "ES", "Spain"
-    ],
-    [
-        "SE", "Sweden"
-    ],
-    [
-        "CH", "Switzerland"
-    ],
-    [
-        "TW", "Taiwan"
-    ],
-    [
-        "TH", "Thailand"
-    ],
-    [
-        "TR", "Turkey"
-    ],
-    [
-        "AE", "United Arab Emirates"
-    ],
-    [
-        "GB", "United Kingdom"
-    ],
-    [
-        "US", "United States"
-    ],
-    [
-        "UY", "Uruguay"
-    ],
-    [
-        "VE", "Venezuela"
-    ],
-    [
-        "VN", "Vietnam"
-    ],
-    ["ZW", "Zimbabwe"]
-];
-
-const CURRENTS_LANGUAGES : Array < [string, string] > = [
-    [
-        "", "All languages"
-    ],
-    [
-        "ar", "Arabic"
-    ],
-    [
-        "zh", "Chinese"
-    ],
-    [
-        "cs", "Czech"
-    ],
-    [
-        "da", "Danish"
-    ],
-    [
-        "nl", "Dutch"
-    ],
-    [
-        "en", "English"
-    ],
-    [
-        "fi", "Finnish"
-    ],
-    [
-        "fr", "French"
-    ],
-    [
-        "de", "German"
-    ],
-    [
-        "el", "Greek"
-    ],
-    [
-        "hi", "Hindi"
-    ],
-    [
-        "hu", "Hungarian"
-    ],
-    [
-        "it", "Italian"
-    ],
-    [
-        "ja", "Japanese"
-    ],
-    [
-        "ko", "Korean"
-    ],
-    [
-        "msa", "Malay"
-    ],
-    [
-        "pt", "Portuguese"
-    ],
-    [
-        "ru", "Russian"
-    ],
-    [
-        "sr", "Serbian"
-    ],
-    [
-        "es", "Spanish"
-    ],
-    [
-        "th", "Thai"
-    ],
-    [
-        "tr", "Turkish"
-    ],
-    ["vi", "Vietnamese"]
-];
-
-const addTickerSpeedAndDirectionSetting = (groupEl : HTMLElement, name : string, desc : string, speedValue : TickerSpeed, directionValue : TickerDirection, onSpeedChange : (value : TickerSpeed) => Promise < void >, onDirectionChange : (value : TickerDirection) => Promise < void >) => {
-    const setting = new Setting(groupEl)
-        .setName(name)
-        .setDesc(desc);
-
-    setting.addDropdown(dropdown => dropdown.addOption("very-slow", "Very slow").addOption("slow", "Slow").addOption("medium", "Medium").addOption("fast", "Fast").setValue(speedValue).onChange((value) => {
-        if (value !== "very-slow" && value !== "slow" && value !== "medium" && value !== "fast") {
-            return;
-        }
-        void onSpeedChange(value);
-    })).addDropdown(dropdown => dropdown.addOption("left", "Left").addOption("right", "Right").setValue(directionValue).onChange((value) => {
-        if (value !== "left" && value !== "right") {
-            return;
-        }
-        void onDirectionChange(value);
-    }));
+const CURRENTS_LANGUAGES : Record < string, string > = {
+    "": "All languages",
+    ar: "Arabic", zh: "Chinese", cs: "Czech", da: "Danish", nl: "Dutch", en: "English",
+    fi: "Finnish", fr: "French", de: "German", el: "Greek", hi: "Hindi", hu: "Hungarian",
+    it: "Italian", ja: "Japanese", ko: "Korean", msa: "Malay", pt: "Portuguese",
+    ru: "Russian", sr: "Serbian", es: "Spanish", th: "Thai", tr: "Turkish", vi: "Vietnamese",
 };
 
-export const addCurrentsSettings = (containerEl : HTMLElement, app : App, plugin : GlobalTicker, redisplay : () => void) : void => {
-    const saveSettingsOnly = async() => {
-        await plugin.saveSettings();
-    };
-    const saveSettingsAndRefreshPanels = async() => {
-        await plugin.saveSettings();
-        await plugin.refreshPanels();
-    };
-    const saveSettingsAndUpdateTickerSettings = async() => {
-        await plugin.saveSettings();
-        plugin.updateTickerSettings();
-    };
-    const saveSettingsAndUpdateTickerColors = async() => {
-        await plugin.saveSettings();
-        plugin.updateTickerColors();
-    };
-
-    // News Settings Section
-
-    const currentsGroupEl = createSettingGroup(containerEl, "Currents news settings");
-
-    new Setting(currentsGroupEl)
-        .setName("Show Currents ticker")
-        .setDesc("Fetch and Currents headlines in the panel")
-        .addToggle(toggle => {
-            toggle
-                .setValue(plugin.settings.showCurrentsTicker)
-                .onChange((value) => {
-                    void(async() => {
-                        plugin.settings.showCurrentsTicker = value;
-                        await saveSettingsAndRefreshPanels();
-                    })();
-                });
-        });
-
-    const descCurrentsKey = createLinkFragment("Used to fetch live headlines. Get a free Currents API key by creating an account" +
-            " ",
-    "here", "https://currentsapi.services/", ".");
-
-    new Setting(currentsGroupEl)
-        .setName('Currents API key')
-        .setDesc(descCurrentsKey)
-        .addComponent(el => new SecretComponent(app, el).setValue(plugin.settings.currentsApiKey).onChange((value) => {
-            void(async() => {
-                const normalized = (value ?? "").trim();
-                plugin.settings.currentsApiKey = normalized;
-                await saveSettingsOnly();
-            })();
-        }));
-
-    const descCategory = createLinkFragment("By default all categories are included. Some supported categories are: regional," +
-            " business, science, sports, technology, general, entertainment, food, lifestyle," +
-            " programming, world, health. For all categories available, visit the ",
-    "documentation", "https://api.currentsapi.services/v1/available/categories", ".");
-
-    new Setting(currentsGroupEl)
-        .setName('Categories')
-        .setDesc(descCategory)
-        .addTextArea(text => text.setPlaceholder('Science, food').setValue(plugin.settings.currentsCategory).onChange((value) => {
-            void(async() => {
-                plugin.settings.currentsCategory = value.trim();
-                await saveSettingsOnly();
-            })();
-        }));
-
-    const descDomains = createLinkFragment("Filter headlines by source domains. To see if a domain is supported, search for " +
-            "it ",
-    "here", "https://www.currentsapi.services/en/statistic/", ". ");
-
-    new Setting(currentsGroupEl)
-        .setName('Domains')
-        .setDesc(descDomains)
-        .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(plugin.settings.currentsDomains).onChange((value) => {
-            void(async() => {
-                plugin.settings.currentsDomains = value.trim();
-                await saveSettingsOnly();
-            })();
-        }));
-
-    new Setting(currentsGroupEl)
-        .setName('Exclude domains')
-        .setDesc('Exclude headlines from specific domains. If a domain appears in both the include' +
-                'd and excluded domains, it will be excluded.')
-        .addTextArea(text => text.setPlaceholder('Bbc.com, nytimes.com').setValue(plugin.settings.currentsExcludeDomains).onChange((value) => {
-            void(async() => {
-                plugin.settings.currentsExcludeDomains = value.trim();
-                await saveSettingsOnly();
-            })();
-        }));
-
-    new Setting(currentsGroupEl)
-        .setName('Region')
-        .setDesc('Filter headlines by region.')
-        .addDropdown(dropdown => {
-            CURRENTS_REGIONS.forEach(([value, label]) => {
-                dropdown.addOption(value, label);
-            });
-            dropdown
-                .setValue(plugin.settings.currentsRegion)
-                .onChange((value) => {
-                    void(async() => {
-                        plugin.settings.currentsRegion = value;
-                        await saveSettingsOnly();
-                    })();
-                });
-        });
-
-    new Setting(currentsGroupEl)
-        .setName('Language')
-        .setDesc('Filter headlines by language.')
-        .addDropdown(dropdown => {
-            CURRENTS_LANGUAGES.forEach(([value, label]) => {
-                dropdown.addOption(value, label);
-            });
-            dropdown
-                .setValue(plugin.settings.currentsLanguage)
-                .onChange((value) => {
-                    void(async() => {
-                        plugin.settings.currentsLanguage = value;
-                        await saveSettingsOnly();
-                    })();
-                });
-        });
-
-    new Setting(currentsGroupEl)
-        .setName('Headline limit')
-        .setDesc('Number of headlines to fetch. The limit is 10 with the free API key. Beware the ' +
-                'amount of headlines displayed depends on the available headlines. For example, i' +
-                'f you set the limit to 10 but only 5 headlines are available for your specified ' +
-                'settings, only 5 will be shown.')
-        .addText(text => {
-            text.inputEl.type = "number";
-            text
-                .setPlaceholder('5')
-                .setValue(String(plugin.settings.currentsLimit))
-                .onChange((value) => {
-                    void(async() => {
-                        const parsed = Number.parseInt(value, 10);
-                        if (Number.isNaN(parsed)) {
-                            return;
-                        }
-                        const clamped = Math.min(10, Math.max(1, parsed));
-                        plugin.settings.currentsLimit = clamped;
-                        text.setValue(String(clamped));
-                        await saveSettingsOnly();
-                    })();
-                });
-        });
-
-    addTickerSpeedAndDirectionSetting(currentsGroupEl, "News ticker speed and direction", "Choose how fast the news ticker scrolls and its direction.", plugin.settings.currentsTickerSpeed, plugin.settings.currentsTickerDirection, async(value) => {
-        plugin.settings.currentsTickerSpeed = value;
-        await saveSettingsAndUpdateTickerSettings();
-    }, async(value) => {
-        plugin.settings.currentsTickerDirection = value;
-        await saveSettingsAndUpdateTickerSettings();
-    });
-
-    new Setting(currentsGroupEl)
-        .setName("Show news footer")
-        .setDesc("Toggle the last refreshed info and refresh button for news. Beware of the daily " +
-                "limit of 20 requests with the free API key.")
-        .addToggle(toggle => {
-            toggle
-                .setValue(plugin.settings.showCurrentsFooter)
-                .onChange((value) => {
-                    void(async() => {
-                        plugin.settings.showCurrentsFooter = value;
-                        await saveSettingsAndRefreshPanels();
-                    })();
-                });
-        });
-
-    new Setting(currentsGroupEl)
-        .setName("Show headline underline")
-        .setDesc("Toggle the source and category line under each headline.")
-        .addToggle(toggle => {
-            toggle
-                .setValue(plugin.settings.showHeadlineMeta)
-                .onChange((value) => {
-                    void(async() => {
-                        plugin.settings.showHeadlineMeta = value;
-                        await saveSettingsAndRefreshPanels();
-                    })();
-                });
-        });
-
-    new Setting(currentsGroupEl)
-        .setName('Headline underline text color')
-        .setDesc('Select any color.')
-        .addColorPicker(color => color.setValue(plugin.settings.currentsTextColor || '#ffffff').onChange((value) => {
-            void(async() => {
-                plugin.settings.currentsTextColor = value.trim();
-                await saveSettingsAndUpdateTickerColors();
-            })();
-        }))
-        .addExtraButton(button => {
-            button
-                .setIcon('reset')
-                .setTooltip('Use theme default')
-                .onClick(() => {
-                    void(async() => {
-                        plugin.settings.currentsTextColor = "";
-                        await saveSettingsAndUpdateTickerColors();
-                        redisplay();
-                    })();
-                });
-        });
-
-    new Setting(currentsGroupEl)
-        .setName('Refresh headlines')
-        .setDesc('Fetch fresh headlines. The limit is 20 requests daily with the free API key.')
-        .addButton(button => {
-            button
-                .setButtonText('Refresh')
-                .setCta()
-                .onClick(() => {
-                    void(async() => {
-                        button.setDisabled(true);
-                        button.setButtonText("Refreshing...");
-                        try {
-                            const refreshed = await plugin.refreshHeadlines();
-                            if (refreshed) {
-                                new Notice("Headlines refreshed.");
-                            } else {
-                                new Notice("No headlines refreshed. Check your API key, limit or connection.");
+export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDefinitionItem < SettingsKey > => ({
+    type: "group",
+    heading: "Currents news settings",
+    items: [
+        {
+            name: "Show Currents ticker",
+            desc: "Fetch and show Currents news headlines in the panel.",
+            control: {type: "toggle", key: "showCurrentsTicker"},
+        },
+        {
+            name: "Currents API key",
+            desc: createLinkFragment("Used to fetch live headlines. Get a free Currents API key by creating an account ", "here", "https://currentsapi.services/", "."),
+            render: (setting) => {
+                setting.addComponent(el => new SecretComponent(plugin.app, el)
+                    .setValue(plugin.settings.currentsApiKey)
+                    .onChange((value) => {
+                        plugin.settings.currentsApiKey = (value ?? "").trim();
+                        void plugin.saveSettings();
+                    }));
+            },
+        },
+        {
+            name: "Categories",
+            desc: createLinkFragment("By default all categories are included. For all categories available, visit the ", "documentation", "https://api.currentsapi.services/v1/available/categories", "."),
+            control: {type: "textarea", key: "currentsCategory", placeholder: "Science, food"},
+        },
+        {
+            name: "Domains",
+            desc: createLinkFragment("Filter headlines by source domains. To see if a domain is supported, search for it ", "here", "https://www.currentsapi.services/en/statistic/", "."),
+            control: {type: "textarea", key: "currentsDomains", placeholder: "Bbc.com, nytimes.com"},
+        },
+        {
+            name: "Exclude domains",
+            desc: "Exclude headlines from specific domains. If a domain appears in both the included and excluded domains, it will be excluded.",
+            control: {type: "textarea", key: "currentsExcludeDomains", placeholder: "Bbc.com, nytimes.com"},
+        },
+        {
+            name: "Region",
+            desc: "Filter headlines by region.",
+            control: {type: "dropdown", key: "currentsRegion", options: CURRENTS_REGIONS},
+        },
+        {
+            name: "Language",
+            desc: "Filter headlines by language.",
+            control: {type: "dropdown", key: "currentsLanguage", options: CURRENTS_LANGUAGES},
+        },
+        {
+            name: "Headline limit",
+            desc: "Number of headlines to fetch. The limit is 10 with the free API key.",
+            control: {
+                type: "number",
+                key: "currentsLimit",
+                min: 1,
+                max: 10,
+                step: 1,
+                placeholder: "5",
+                validate: (value : number) => Number.isInteger(value) && value >= 1 && value <= 10
+                    ? undefined
+                    : "Enter a whole number from 1 to 10.",
+            },
+        },
+        {
+            name: "News ticker speed",
+            desc: "Choose how fast the news ticker scrolls.",
+            control: {
+                type: "dropdown",
+                key: "currentsTickerSpeed",
+                options: {"very-slow": "Very slow", slow: "Slow", medium: "Medium", fast: "Fast"},
+            },
+        },
+        {
+            name: "News ticker direction",
+            desc: "Choose the news ticker direction.",
+            control: {
+                type: "dropdown",
+                key: "currentsTickerDirection",
+                options: {left: "Left", right: "Right"},
+            },
+        },
+        {
+            name: "Show news footer",
+            desc: "Toggle the last refreshed info and refresh button for news. Beware of the daily limit of 20 requests with the free API key.",
+            control: {type: "toggle", key: "showCurrentsFooter"},
+        },
+        {
+            name: "Show headline underline",
+            desc: "Toggle the source and category line under each headline.",
+            control: {type: "toggle", key: "showHeadlineMeta"},
+        },
+        {
+            name: "Headline underline text color",
+            desc: "Select any color.",
+            control: {
+                type: "color",
+                key: "currentsTextColor",
+                defaultValue: getTextFaintHex(),
+            },
+        },
+        {
+            name: "Refresh headlines",
+            desc: "Fetch fresh headlines. The limit is 20 requests daily with the free API key.",
+            render: (setting) => {
+                setting.addButton(button => button
+                    .setButtonText("Refresh")
+                    .setCta()
+                    .onClick(() => {
+                        void(async() => {
+                            button.setDisabled(true);
+                            button.setButtonText("Refreshing...");
+                            try {
+                                const refreshed = await plugin.refreshHeadlines();
+                                new Notice(refreshed
+                                    ? "Headlines refreshed."
+                                    : "No headlines refreshed. Check your API key, limit or connection.");
+                            } catch (error) {
+                                console.error("Failed to refresh headlines", error);
+                                new Notice("Failed to refresh headlines. Check your API key, limit or connection.");
+                            } finally {
+                                button.setDisabled(false);
+                                button.setButtonText("Refresh");
                             }
-                        } catch (error) {
-                            console.error("Failed to refresh headlines", error);
-                            new Notice("Failed to refresh headlines. Check your API key, limit or connection.");
-                        } finally {
-                            button.setDisabled(false);
-                            button.setButtonText("Refresh");
-                        }
-                    })();
-                });
-        });
-};
+                        })();
+                    }));
+            },
+        },
+    ],
+});

@@ -1,11 +1,12 @@
 import {
     App,
     PluginSettingTab,
-    Setting,
 } from "obsidian";
+import type {SettingDefinitionItem} from "obsidian";
 import GlobalTicker from "./main";
-import {addCurrentsSettings} from "./settings/currents";
-import {addFinnhubSettings} from "./settings/finnhub";
+import {getCurrentsSettingDefinitions} from "./settings/currents";
+import {getFinnhubSettingDefinitions} from "./settings/finnhub";
+import {getTextFaintHex} from "./settings/color";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
 export type TickerDirection = "left" | "right";
@@ -69,15 +70,6 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     currentsExcludeDomains: ""
 }
 
-const createSettingGroup = (containerEl: HTMLElement, title: string): HTMLElement => {
-    const groupEl = containerEl.createDiv({cls: "setting-group"});
-    groupEl.createEl("div", {
-        text: title,
-        cls: "setting-item-name setting-section-header",
-    });
-    return groupEl.createDiv({cls: "setting-items"});
-};
-
 export class GlobalTickerSettingTab extends PluginSettingTab {
     plugin : GlobalTicker;
 
@@ -86,68 +78,103 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
-    display() : void {
-        const {containerEl} = this;
-        const saveSettingsOnly = async() => {
-            await this.plugin.saveSettings();
-        };
-        const saveSettingsAndRefreshPanels = async() => {
-            await this.plugin.saveSettings();
+    getSettingDefinitions() : SettingDefinitionItem < keyof GlobalTickerSettings & string > [] {
+        return [
+            {
+                type: "group",
+                heading: "Global settings",
+                items: [
+                    {
+                        name: "Date format",
+                        desc: "Choose the date format used in the refresh footer.",
+                        render: (setting) => {
+                            setting.addDropdown(dropdown => dropdown
+                                .addOption("dmy", "Day/month/year")
+                                .addOption("mdy", "Month/day/year")
+                                .setValue(this.plugin.settings.useUsDateFormat ? "mdy" : "dmy")
+                                .onChange((value) => {
+                                    void(async() => {
+                                        this.plugin.settings.useUsDateFormat = value === "mdy";
+                                        await this.plugin.saveSettings();
+                                        await this.plugin.refreshPanels();
+                                    })();
+                                }));
+                        },
+                    },
+                    {
+                        name: "Refresh on app open",
+                        desc: "Refresh headlines and stocks when Obsidian starts.",
+                        control: {type: "toggle", key: "refreshOnAppOpen"},
+                    },
+                    {
+                        name: "Pause on hover",
+                        desc: "Pause ticker scrolling while the pointer is over it.",
+                        control: {type: "toggle", key: "pauseOnHover"},
+                    },
+                ],
+            },
+            getCurrentsSettingDefinitions(this.plugin),
+            getFinnhubSettingDefinitions(this.plugin),
+        ];
+    }
+
+    getControlValue(key : string) : unknown {
+        if ((key === "currentsTextColor" || key === "finnhubPriceColor") && !this.plugin.settings[key]) {
+            return getTextFaintHex();
+        }
+        return super.getControlValue(key);
+    }
+
+    async setControlValue(key : string, value : unknown) : Promise < void > {
+        const trimmedKeys = new Set([
+            "currentsCategory",
+            "currentsDomains",
+            "currentsExcludeDomains",
+        ]);
+        let normalizedValue = typeof value === "string" && trimmedKeys.has(key)
+            ? value.trim()
+            : value;
+        if ((key === "currentsTextColor" || key === "finnhubPriceColor") &&
+            typeof normalizedValue === "string" &&
+            normalizedValue.toLowerCase() === getTextFaintHex().toLowerCase()) {
+            normalizedValue = "";
+        }
+
+        await super.setControlValue(key, normalizedValue);
+
+        const panelKeys = new Set([
+            "useUsDateFormat",
+            "pauseOnHover",
+            "showCurrentsTicker",
+            "showFinnhubTicker",
+            "showCurrentsFooter",
+            "showFinnhubFooter",
+            "showHeadlineMeta",
+        ]);
+        if (panelKeys.has(key)) {
             await this.plugin.refreshPanels();
-        };
+            return;
+        }
 
-        containerEl.empty();
+        const tickerKeys = new Set([
+            "currentsTickerSpeed",
+            "currentsTickerDirection",
+            "finnhubTickerSpeed",
+            "finnhubTickerDirection",
+        ]);
+        if (tickerKeys.has(key)) {
+            this.plugin.updateTickerSettings();
+            return;
+        }
 
-		// Global Settings Section
-
-        const globalGroupEl = createSettingGroup(containerEl, "Global settings");
-
-        new Setting(globalGroupEl)
-            .setName("Date format")
-            .setDesc("Choose the date format used in the refresh footer.")
-            .addDropdown(dropdown => {
-                dropdown.addOption("dmy", "Day/month/year");
-                dropdown.addOption("mdy", "Month/day/year");
-                dropdown
-                    .setValue(this.plugin.settings.useUsDateFormat
-                    ? "mdy"
-                    : "dmy")
-                    .onChange((value) => {
-                        void (async() => {
-                            this.plugin.settings.useUsDateFormat = value === "mdy";
-                            await saveSettingsAndRefreshPanels();
-                        })();
-                    });
-            });
-
-        new Setting(globalGroupEl)
-            .setName("Refresh on app open")
-            .setDesc("Refresh headlines and stocks when Obsidian starts.")
-            .addToggle(toggle => {
-                toggle
-                    .setValue(this.plugin.settings.refreshOnAppOpen)
-                    .onChange((value) => {
-                        void (async() => {
-                            this.plugin.settings.refreshOnAppOpen = value;
-                            await saveSettingsOnly();
-                        })();
-                    });
-            });
-        new Setting(globalGroupEl)
-            .setName("Pause on hover")
-            .setDesc("Pause ticker scrolling while the pointer is over it.")
-            .addToggle(toggle => {
-                toggle
-                    .setValue(this.plugin.settings.pauseOnHover)
-                    .onChange((value) => {
-                        void (async() => {
-                            this.plugin.settings.pauseOnHover = value;
-                            await saveSettingsAndRefreshPanels();
-                        })();
-                    });
-            });
-
-        addCurrentsSettings(containerEl, this.app, this.plugin, () => this.display());
-        addFinnhubSettings(containerEl, this.app, this.plugin, () => this.display());
+        const colorKeys = new Set([
+            "currentsTextColor",
+            "finnhubChangeColor",
+            "finnhubChangeNegativeColor",
+            "finnhubPriceColor",
+        ]);
+        if (colorKeys.has(key)) {
+            this.plugin.updateTickerColors();
+        }
     }
 }
