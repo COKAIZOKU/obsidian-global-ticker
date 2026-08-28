@@ -110,24 +110,26 @@ export const getFinnhubSettingDefinitions = (plugin : GlobalTicker) : SettingDef
             name: "Refresh stocks data",
             desc: "Fetch the latest stocks quotes.",
             render: (setting) => {
-                setting.addButton(button => button.setButtonText("Refresh").setCta().onClick(() => {
-                    void(async() => {
-                        button.setDisabled(true);
-                        button.setButtonText("Refreshing...");
-                        try {
-                            const refreshed = await plugin.refreshFinnhub();
-                            new Notice(refreshed
-                                ? "Stocks data refreshed."
-                                : "No stocks data refreshed. Check your API key, limit or connection.");
-                        } catch (error) {
-                            console.error("Failed to refresh stocks data", error);
-                            new Notice("Failed to refresh stocks data. Check your API key, limit or connection.");
-                        } finally {
-                            button.setDisabled(false);
-                            button.setButtonText("Refresh");
-                        }
-                    })();
-                }));
+                setting.addButton(button => {
+                    button.setButtonText("Refresh").setCta().onClick(() => {
+                        void(async() => {
+                            button.setDisabled(true);
+                            button.setButtonText("Refreshing...");
+                            try {
+                                const refreshed = await plugin.refreshFinnhub();
+                                new Notice(refreshed
+                                    ? "Stocks data refreshed."
+                                    : "No stocks data refreshed. Check your API key, limit or connection.");
+                            } catch (error) {
+                                console.error("Failed to refresh stocks data", error);
+                                new Notice("Failed to refresh stocks data. Check your API key, limit or connection.");
+                            } finally {
+                                button.setDisabled(false);
+                                button.setButtonText("Refresh");
+                            }
+                        })();
+                    });
+                });
             }
         }
     ]

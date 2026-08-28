@@ -88,17 +88,18 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         name: "Date format",
                         desc: "Choose the date format used in the refresh footer.",
                         render: (setting) => {
-                            setting.addDropdown(dropdown => dropdown
-                                .addOption("dmy", "Day/month/year")
-                                .addOption("mdy", "Month/day/year")
-                                .setValue(this.plugin.settings.useUsDateFormat ? "mdy" : "dmy")
-                                .onChange((value) => {
+                            setting.addDropdown(dropdown => {
+                                dropdown.addOption("dmy", "Day/month/year")
+                                    .addOption("mdy", "Month/day/year")
+                                    .setValue(this.plugin.settings.useUsDateFormat ? "mdy" : "dmy")
+                                    .onChange((value) => {
                                     void(async() => {
                                         this.plugin.settings.useUsDateFormat = value === "mdy";
                                         await this.plugin.saveSettings();
                                         await this.plugin.refreshPanels();
                                     })();
-                                }));
+                                    });
+                            });
                         },
                     },
                     {

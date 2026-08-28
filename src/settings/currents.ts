@@ -265,24 +265,26 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
             name: "Refresh headlines",
             desc: "Fetch fresh headlines. The limit is 20 requests daily with the free API key.",
             render: (setting) => {
-                setting.addButton(button => button.setButtonText("Refresh").setCta().onClick(() => {
-                    void(async() => {
-                        button.setDisabled(true);
-                        button.setButtonText("Refreshing...");
-                        try {
-                            const refreshed = await plugin.refreshHeadlines();
-                            new Notice(refreshed
-                                ? "Headlines refreshed."
-                                : "No headlines refreshed. Check your API key, limit or connection.");
-                        } catch (error) {
-                            console.error("Failed to refresh headlines", error);
-                            new Notice("Failed to refresh headlines. Check your API key, limit or connection.");
-                        } finally {
-                            button.setDisabled(false);
-                            button.setButtonText("Refresh");
-                        }
-                    })();
-                }));
+                setting.addButton(button => {
+                    button.setButtonText("Refresh").setCta().onClick(() => {
+                        void(async() => {
+                            button.setDisabled(true);
+                            button.setButtonText("Refreshing...");
+                            try {
+                                const refreshed = await plugin.refreshHeadlines();
+                                new Notice(refreshed
+                                    ? "Headlines refreshed."
+                                    : "No headlines refreshed. Check your API key, limit or connection.");
+                            } catch (error) {
+                                console.error("Failed to refresh headlines", error);
+                                new Notice("Failed to refresh headlines. Check your API key, limit or connection.");
+                            } finally {
+                                button.setDisabled(false);
+                                button.setButtonText("Refresh");
+                            }
+                        })();
+                    });
+                });
             }
         }
     ]
