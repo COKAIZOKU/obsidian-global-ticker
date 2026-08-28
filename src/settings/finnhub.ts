@@ -6,7 +6,7 @@ import type {GlobalTickerSettings}
 from "../settings";
 import {getTextFaintHex} from "./color";
 
-type SettingsKey = keyof GlobalTickerSettings & string;
+type SettingsKey = keyof GlobalTickerSettings;
 
 const createLinkFragment = (leadingText : string, linkText : string, href : string, trailingText : string) : DocumentFragment => {
     const fragment = document.createDocumentFragment();

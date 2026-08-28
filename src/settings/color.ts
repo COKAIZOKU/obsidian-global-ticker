@@ -1,6 +1,6 @@
 export const getTextFaintHex = () : string => {
     const probe = document.body.createSpan();
-    probe.style.color = "var(--text-faint)";
+    probe.setCssStyles({ color: "var(--text-faint)" });
     const resolvedColor = getComputedStyle(probe).color;
     probe.remove();
 

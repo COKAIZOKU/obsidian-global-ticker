@@ -78,7 +78,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
-    getSettingDefinitions() : SettingDefinitionItem < keyof GlobalTickerSettings & string > [] {
+    getSettingDefinitions() : SettingDefinitionItem < keyof GlobalTickerSettings > [] {
         return [
             {
                 type: "group",
