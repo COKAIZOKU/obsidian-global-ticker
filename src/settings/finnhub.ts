@@ -25,7 +25,7 @@ const createLinkFragment = (leadingText : string, linkText : string, href : stri
 
 export const getFinnhubSettingDefinitions = (plugin : GlobalTicker) : SettingDefinitionItem < SettingsKey > => ({
     type: "group",
-    heading: "Finnhub stocks settings",
+    heading: "Finnhub Stocks settings",
     items: [
         {
             name: "Show Finnhub ticker",

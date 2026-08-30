@@ -10,13 +10,15 @@
 }
 
 .workspace-leaf-content[data-type="global-ticker-panel"] .currents-section,
-.workspace-leaf-content[data-type="global-ticker-panel"] .finnhub-section {
+.workspace-leaf-content[data-type="global-ticker-panel"] .finnhub-section,
+.workspace-leaf-content[data-type="global-ticker-panel"] .hacker-news-section {
   flex: 1 1 0;
   min-height: 0;
 }
 
 .workspace-leaf-content[data-type="global-ticker-panel"] .currents-section > .scroller,
-.workspace-leaf-content[data-type="global-ticker-panel"] .finnhub-section > .scroller {
+.workspace-leaf-content[data-type="global-ticker-panel"] .finnhub-section > .scroller,
+.workspace-leaf-content[data-type="global-ticker-panel"] .hacker-news-section > .scroller {
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -106,7 +108,8 @@
 }
 
 .currents-section,
-.finnhub-section {
+.finnhub-section,
+.hacker-news-section {
   display: flex;
   flex-direction: column;
   width: 100%;

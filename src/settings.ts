@@ -6,6 +6,8 @@ import type {SettingDefinitionItem} from "obsidian";
 import GlobalTicker from "./main";
 import {getCurrentsSettingDefinitions} from "./settings/currents";
 import {getFinnhubSettingDefinitions} from "./settings/finnhub";
+import {getHackerNewsSettingDefinitions} from "./settings/hacker-news";
+import type {HackerNewsFeed} from "./rss/hacker-news";
 import {getTextFaintHex} from "./settings/color";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
@@ -15,8 +17,10 @@ export interface GlobalTickerSettings {
     mySetting : string;
     currentsTickerSpeed : TickerSpeed;
     finnhubTickerSpeed : TickerSpeed;
+    hackerNewsTickerSpeed : TickerSpeed;
     currentsTickerDirection : TickerDirection;
     finnhubTickerDirection : TickerDirection;
+    hackerNewsTickerDirection : TickerDirection;
     showCurrentsFooter : boolean;
     showFinnhubFooter : boolean;
     useUsDateFormat : boolean;
@@ -24,6 +28,11 @@ export interface GlobalTickerSettings {
     pauseOnHover : boolean;
     showCurrentsTicker : boolean;
     showFinnhubTicker : boolean;
+    showHackerNewsTicker : boolean;
+    showHackerNewsFooter : boolean;
+    hackerNewsHeadlineLimit : number;
+    hackerNewsFeed : HackerNewsFeed;
+    hackerNewsSearchTerms : string;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
     currentsTextColor : string;
@@ -45,8 +54,10 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     mySetting: 'default',
     currentsTickerSpeed: "slow",
     finnhubTickerSpeed: "slow",
+    hackerNewsTickerSpeed: "slow",
     currentsTickerDirection: "left",
     finnhubTickerDirection: "left",
+    hackerNewsTickerDirection: "left",
     showCurrentsFooter: true,
     showFinnhubFooter: true,
     useUsDateFormat: false,
@@ -54,6 +65,11 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     pauseOnHover: true,
     showCurrentsTicker: true,
     showFinnhubTicker: true,
+    showHackerNewsTicker: true,
+    showHackerNewsFooter: true,
+    hackerNewsHeadlineLimit: 10,
+    hackerNewsFeed: "frontpage",
+    hackerNewsSearchTerms: "",
     showHeadlineMeta: true,
     currentsTextColor: "",
     finnhubChangeColor: "",
@@ -112,8 +128,18 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         desc: "Pause ticker scrolling while the pointer is over it.",
                         control: {type: "toggle", key: "pauseOnHover"},
                     },
+                    {
+                        name: "Headline underline text color",
+                        desc: "Select any color.",
+                        control: {
+                            type: "color",
+                            key: "currentsTextColor",
+                            defaultValue: getTextFaintHex(),
+                        },
+                    },
                 ],
             },
+            getHackerNewsSettingDefinitions(this.plugin),
             getCurrentsSettingDefinitions(this.plugin),
             getFinnhubSettingDefinitions(this.plugin),
         ];
@@ -131,6 +157,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "currentsCategory",
             "currentsDomains",
             "currentsExcludeDomains",
+            "hackerNewsSearchTerms",
         ]);
         let normalizedValue = typeof value === "string" && trimmedKeys.has(key)
             ? value.trim()
@@ -148,6 +175,11 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "pauseOnHover",
             "showCurrentsTicker",
             "showFinnhubTicker",
+            "showHackerNewsTicker",
+            "showHackerNewsFooter",
+            "hackerNewsHeadlineLimit",
+            "hackerNewsFeed",
+            "hackerNewsSearchTerms",
             "showCurrentsFooter",
             "showFinnhubFooter",
             "showHeadlineMeta",
@@ -162,6 +194,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "currentsTickerDirection",
             "finnhubTickerSpeed",
             "finnhubTickerDirection",
+            "hackerNewsTickerSpeed",
+            "hackerNewsTickerDirection",
         ]);
         if (tickerKeys.has(key)) {
             this.plugin.updateTickerSettings();
