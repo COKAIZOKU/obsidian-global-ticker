@@ -245,14 +245,6 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
                 key: "showHeadlineMeta"
             }
         }, {
-            name: "Show Currents footer",
-            desc: "Toggle the last refreshed info and refresh button for news. Beware of the daily " +
-                    "limit of 20 requests with the free API key.",
-            control: {
-                type: "toggle",
-                key: "showCurrentsFooter"
-            }
-        }, {
             name: "Refresh headlines",
             desc: "Fetch fresh headlines. The limit is 20 requests daily with the free API key.",
             render: (setting) => {

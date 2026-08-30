@@ -100,13 +100,6 @@ export const getFinnhubSettingDefinitions = (plugin : GlobalTicker) : SettingDef
                 defaultValue: getTextFaintHex()
             }
         }, {
-            name: "Show stocks footer",
-            desc: "Toggle the last refreshed info and refresh button for stocks.",
-            control: {
-                type: "toggle",
-                key: "showFinnhubFooter"
-            }
-        }, {
             name: "Refresh stocks data",
             desc: "Fetch the latest stocks quotes.",
             render: (setting) => {

@@ -289,8 +289,6 @@ interface LegacyTickerSettings {
   stockTickerSpeed?: TickerSpeed;
   newsTickerDirection?: TickerDirection;
   stockTickerDirection?: TickerDirection;
-  showNewsFooter?: boolean;
-  showStockFooter?: boolean;
   newsTextColor?: string;
   stockChangeColor?: string;
   stockChangeNegativeColor?: string;
@@ -316,12 +314,6 @@ const normalizeSettings = (rawSettings: unknown): GlobalTickerSettings => {
   }
   if (!("finnhubTickerDirection" in raw) && legacy.stockTickerDirection) {
     settings.finnhubTickerDirection = legacy.stockTickerDirection;
-  }
-  if (!("showCurrentsFooter" in raw) && legacy.showNewsFooter !== undefined) {
-    settings.showCurrentsFooter = legacy.showNewsFooter;
-  }
-  if (!("showFinnhubFooter" in raw) && legacy.showStockFooter !== undefined) {
-    settings.showFinnhubFooter = legacy.showStockFooter;
   }
   if (!("currentsTextColor" in raw) && legacy.newsTextColor !== undefined) {
     settings.currentsTextColor = legacy.newsTextColor;
@@ -693,9 +685,8 @@ class MyPanelView extends ItemView {
   // Render the footer for the news ticker
   private renderCurrentsFooter(group: HTMLElement) {
     group.empty();
-    group.createDiv({ cls: "ticker-divider" });
 
-    if (!this.plugin.settings.showCurrentsFooter) {
+    if (!this.plugin.settings.showTickerFooters) {
       return;
     }
 
@@ -726,7 +717,6 @@ class MyPanelView extends ItemView {
         }
       })();
     });
-
     group.createDiv({ cls: "ticker-divider" });
   }
 
@@ -734,11 +724,10 @@ class MyPanelView extends ItemView {
   private renderFinnhubFooter(group: HTMLElement, lastRefreshedAt: number | null) {
     group.empty();
 
-    if (!this.plugin.settings.showFinnhubFooter) {
+    if (!this.plugin.settings.showTickerFooters) {
       return;
     }
 
-    group.createDiv({ cls: "ticker-divider" });
     const finnhubFooter = group.createDiv({ cls: "ticker-footer" });
     finnhubFooter.createSpan({
       cls: "ticker-refresh-time",
@@ -771,11 +760,10 @@ class MyPanelView extends ItemView {
 
   private renderHackerNewsFooter(group: HTMLElement) {
     group.empty();
-    if (!this.plugin.settings.showHackerNewsFooter) {
+    if (!this.plugin.settings.showTickerFooters) {
       return;
     }
 
-    group.createDiv({ cls: "ticker-divider" });
     const footer = group.createDiv({ cls: "ticker-footer" });
     footer.createSpan({
       cls: "ticker-refresh-time",
@@ -808,11 +796,10 @@ class MyPanelView extends ItemView {
 
   private renderGoogleNewsFooter(group: HTMLElement) {
     group.empty();
-    if (!this.plugin.settings.showGoogleNewsFooter) {
+    if (!this.plugin.settings.showTickerFooters) {
       return;
     }
 
-    group.createDiv({ cls: "ticker-divider" });
     const footer = group.createDiv({ cls: "ticker-footer" });
     footer.createSpan({
       cls: "ticker-refresh-time",
@@ -855,24 +842,36 @@ class MyPanelView extends ItemView {
     this.hackerNewsSectionEl = showHackerNews
       ? container.createDiv({ cls: "hacker-news-section" })
       : undefined;
+    if (showHackerNews) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
     this.hackerNewsFooterGroupEl = showHackerNews
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
     this.googleNewsSectionEl = showGoogleNews
       ? container.createDiv({ cls: "google-news-section" })
       : undefined;
+    if (showGoogleNews) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
     this.googleNewsFooterGroupEl = showGoogleNews
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
     this.currentsSectionEl = showCurrents
       ? container.createDiv({ cls: "currents-section" })
       : undefined;
+    if (showCurrents) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
     this.currentsFooterGroupEl = showCurrents
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
     this.finnhubSectionEl = showFinnhub
       ? container.createDiv({ cls: "finnhub-section" })
       : undefined;
+    if (showFinnhub) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
     this.finnhubFooterGroupEl = showFinnhub
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;

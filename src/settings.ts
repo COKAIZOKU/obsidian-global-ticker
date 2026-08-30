@@ -23,22 +23,19 @@ export interface GlobalTickerSettings {
     currentsTickerDirection : TickerDirection;
     finnhubTickerDirection : TickerDirection;
     hackerNewsTickerDirection : TickerDirection;
-    showCurrentsFooter : boolean;
-    showFinnhubFooter : boolean;
+    showTickerFooters : boolean;
     useUsDateFormat : boolean;
     refreshOnAppOpen : boolean;
     pauseOnHover : boolean;
     showCurrentsTicker : boolean;
     showFinnhubTicker : boolean;
     showHackerNewsTicker : boolean;
-    showHackerNewsFooter : boolean;
     hackerNewsHeadlineLimit : number;
     hackerNewsFeed : HackerNewsFeed;
     hackerNewsSearchTerms : string;
     googleNewsTickerSpeed : TickerSpeed;
     googleNewsTickerDirection : TickerDirection;
     showGoogleNewsTicker : boolean;
-    showGoogleNewsFooter : boolean;
     googleNewsHeadlineLimit : number;
     googleNewsTopic : GoogleNewsTopic;
     googleNewsLanguage : string;
@@ -68,22 +65,19 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     currentsTickerDirection: "left",
     finnhubTickerDirection: "left",
     hackerNewsTickerDirection: "left",
-    showCurrentsFooter: true,
-    showFinnhubFooter: true,
+    showTickerFooters: true,
     useUsDateFormat: false,
     refreshOnAppOpen: false,
     pauseOnHover: true,
     showCurrentsTicker: true,
     showFinnhubTicker: true,
     showHackerNewsTicker: true,
-    showHackerNewsFooter: true,
     hackerNewsHeadlineLimit: 10,
     hackerNewsFeed: "frontpage",
     hackerNewsSearchTerms: "",
     googleNewsTickerSpeed: "slow",
     googleNewsTickerDirection: "left",
     showGoogleNewsTicker: true,
-    showGoogleNewsFooter: true,
     googleNewsHeadlineLimit: 10,
     googleNewsTopic: "top-stories",
     googleNewsLanguage: "en-US",
@@ -147,6 +141,11 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         control: {type: "toggle", key: "pauseOnHover"},
                     },
                     {
+                        name: "Show ticker footers",
+                        desc: "Show or hide the footer for every ticker.",
+                        control: {type: "toggle", key: "showTickerFooters"},
+                    },
+                    {
                         name: "Headline underline text color",
                         desc: "Select any color.",
                         control: {
@@ -197,9 +196,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "showCurrentsTicker",
             "showFinnhubTicker",
             "showHackerNewsTicker",
-            "showHackerNewsFooter",
+            "showTickerFooters",
             "showGoogleNewsTicker",
-            "showGoogleNewsFooter",
             "googleNewsHeadlineLimit",
             "googleNewsTopic",
             "googleNewsLanguage",
@@ -207,8 +205,6 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "hackerNewsHeadlineLimit",
             "hackerNewsFeed",
             "hackerNewsSearchTerms",
-            "showCurrentsFooter",
-            "showFinnhubFooter",
             "showHeadlineMeta",
         ]);
         if (panelKeys.has(key)) {

@@ -17,13 +17,6 @@ export const getHackerNewsSettingDefinitions = (plugin: GlobalTicker): SettingDe
                 key: "showHackerNewsTicker"
             }
         }, {
-            name: "Show Hacker News footer",
-            desc: "Show the last refreshed time and refresh button for Hacker News.",
-            control: {
-                type: "toggle",
-                key: "showHackerNewsFooter"
-            }
-        }, {
             name: "Hacker News ticker speed",
             desc: "Choose how fast the Hacker News ticker scrolls.",
             control: {

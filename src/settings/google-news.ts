@@ -17,13 +17,6 @@ export const getGoogleNewsSettingDefinitions = (plugin: GlobalTicker): SettingDe
                 key: "showGoogleNewsTicker"
             }
         }, {
-            name: "Show Google News footer",
-            desc: "Show the last refreshed time and refresh button for Google News.",
-            control: {
-                type: "toggle",
-                key: "showGoogleNewsFooter"
-            }
-        }, {
             name: "Google News ticker speed",
             desc: "Choose how fast the Google News ticker scrolls.",
             control: {
