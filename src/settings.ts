@@ -8,6 +8,8 @@ import {getCurrentsSettingDefinitions} from "./settings/currents";
 import {getFinnhubSettingDefinitions} from "./settings/finnhub";
 import {getHackerNewsSettingDefinitions} from "./settings/hacker-news";
 import type {HackerNewsFeed} from "./rss/hacker-news";
+import {getGoogleNewsSettingDefinitions} from "./settings/google-news";
+import type {GoogleNewsTopic} from "./rss/google-news";
 import {getTextFaintHex} from "./settings/color";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
@@ -33,6 +35,14 @@ export interface GlobalTickerSettings {
     hackerNewsHeadlineLimit : number;
     hackerNewsFeed : HackerNewsFeed;
     hackerNewsSearchTerms : string;
+    googleNewsTickerSpeed : TickerSpeed;
+    googleNewsTickerDirection : TickerDirection;
+    showGoogleNewsTicker : boolean;
+    showGoogleNewsFooter : boolean;
+    googleNewsHeadlineLimit : number;
+    googleNewsTopic : GoogleNewsTopic;
+    googleNewsLanguage : string;
+    googleNewsCountry : string;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
     currentsTextColor : string;
@@ -70,6 +80,14 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     hackerNewsHeadlineLimit: 10,
     hackerNewsFeed: "frontpage",
     hackerNewsSearchTerms: "",
+    googleNewsTickerSpeed: "slow",
+    googleNewsTickerDirection: "left",
+    showGoogleNewsTicker: true,
+    showGoogleNewsFooter: true,
+    googleNewsHeadlineLimit: 10,
+    googleNewsTopic: "top-stories",
+    googleNewsLanguage: "en-US",
+    googleNewsCountry: "US",
     showHeadlineMeta: true,
     currentsTextColor: "",
     finnhubChangeColor: "",
@@ -140,6 +158,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                 ],
             },
             getHackerNewsSettingDefinitions(this.plugin),
+            getGoogleNewsSettingDefinitions(this.plugin),
             getCurrentsSettingDefinitions(this.plugin),
             getFinnhubSettingDefinitions(this.plugin),
         ];
@@ -158,6 +177,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "currentsDomains",
             "currentsExcludeDomains",
             "hackerNewsSearchTerms",
+            "googleNewsLanguage",
+            "googleNewsCountry",
         ]);
         let normalizedValue = typeof value === "string" && trimmedKeys.has(key)
             ? value.trim()
@@ -177,6 +198,12 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "showFinnhubTicker",
             "showHackerNewsTicker",
             "showHackerNewsFooter",
+            "showGoogleNewsTicker",
+            "showGoogleNewsFooter",
+            "googleNewsHeadlineLimit",
+            "googleNewsTopic",
+            "googleNewsLanguage",
+            "googleNewsCountry",
             "hackerNewsHeadlineLimit",
             "hackerNewsFeed",
             "hackerNewsSearchTerms",
@@ -196,6 +223,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "finnhubTickerDirection",
             "hackerNewsTickerSpeed",
             "hackerNewsTickerDirection",
+            "googleNewsTickerSpeed",
+            "googleNewsTickerDirection",
         ]);
         if (tickerKeys.has(key)) {
             this.plugin.updateTickerSettings();
