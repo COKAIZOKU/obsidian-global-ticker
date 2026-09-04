@@ -545,7 +545,7 @@ class MyPanelView extends ItemView {
         attr: { target: "_blank", rel: "noopener" },
       });
       const sourceLabel = getSourceLabel(headline);
-      if (sourceLabel) {
+      if (this.plugin.settings.showHeadlineMeta && sourceLabel) {
         const metaList = item.createEl("ul", { cls: "headline-meta" });
         metaList.createEl("li", { text: sourceLabel });
         metaList.createEl("li", { text: feedLabel });

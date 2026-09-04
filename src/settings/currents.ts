@@ -238,13 +238,6 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
                     : "Enter a whole number from 1 to 10."
             }
         }, {
-            name: "Show headline underline",
-            desc: "Toggle the source and category line under each headline.",
-            control: {
-                type: "toggle",
-                key: "showHeadlineMeta"
-            }
-        }, {
             name: "Refresh headlines",
             desc: "Fetch fresh headlines. The limit is 20 requests daily with the free API key.",
             render: (setting) => {

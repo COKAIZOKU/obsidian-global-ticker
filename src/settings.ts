@@ -146,6 +146,11 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         control: {type: "toggle", key: "showTickerFooters"},
                     },
                     {
+                        name: "Show headline underline",
+                        desc: "Show or hide the source and category line for every news ticker.",
+                        control: {type: "toggle", key: "showHeadlineMeta"},
+                    },
+                    {
                         name: "Headline underline text color",
                         desc: "Select any color.",
                         control: {
