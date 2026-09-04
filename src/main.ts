@@ -9,6 +9,8 @@ import {
 import { applyTickerSpeed, initTicker } from "./ticker";
 import { fetchCurrentsHeadlines } from "./api/currents";
 import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/finnhub";
+import { fetchHackerNewsHeadlines } from "./rss/hacker-news";
+import { fetchGoogleNewsHeadlines } from "./rss/google-news";
 
 // Constants related to ticker cloning logic
 const VIEW_TYPE_MY_PANEL = "global-ticker-panel";
@@ -263,6 +265,18 @@ interface StockQuotesCache {
 	quotes: StockQuote[];
 }
 
+interface HackerNewsCache {
+  cacheKey: string;
+  fetchedAt: number;
+  headlines: HeadlineItem[];
+}
+
+interface GoogleNewsCache {
+  cacheKey: string;
+  fetchedAt: number;
+  headlines: HeadlineItem[];
+}
+
 // Data structure for plugin storage, currently stores settings and headlines cache
 interface PluginData {
   settings?: Partial<GlobalTickerSettings>;
@@ -275,8 +289,6 @@ interface LegacyTickerSettings {
   stockTickerSpeed?: TickerSpeed;
   newsTickerDirection?: TickerDirection;
   stockTickerDirection?: TickerDirection;
-  showNewsFooter?: boolean;
-  showStockFooter?: boolean;
   newsTextColor?: string;
   stockChangeColor?: string;
   stockChangeNegativeColor?: string;
@@ -302,12 +314,6 @@ const normalizeSettings = (rawSettings: unknown): GlobalTickerSettings => {
   }
   if (!("finnhubTickerDirection" in raw) && legacy.stockTickerDirection) {
     settings.finnhubTickerDirection = legacy.stockTickerDirection;
-  }
-  if (!("showCurrentsFooter" in raw) && legacy.showNewsFooter !== undefined) {
-    settings.showCurrentsFooter = legacy.showNewsFooter;
-  }
-  if (!("showFinnhubFooter" in raw) && legacy.showStockFooter !== undefined) {
-    settings.showFinnhubFooter = legacy.showStockFooter;
   }
   if (!("currentsTextColor" in raw) && legacy.newsTextColor !== undefined) {
     settings.currentsTextColor = legacy.newsTextColor;
@@ -340,9 +346,13 @@ class MyPanelView extends ItemView {
 
   private currentsSpeed: TickerSpeed;
   private finnhubSpeed: TickerSpeed;
+  private hackerNewsSpeed: TickerSpeed;
+  private googleNewsSpeed: TickerSpeed;
 
   private currentsDirection: TickerDirection;
   private finnhubDirection: TickerDirection;
+  private hackerNewsDirection: TickerDirection;
+  private googleNewsDirection: TickerDirection;
 
   private currentsTextColor: string;
   private finnhubPriceColor: string;
@@ -351,17 +361,25 @@ class MyPanelView extends ItemView {
   
   private finnhubSectionEl?: HTMLElement;
   private currentsSectionEl?: HTMLElement;
+  private hackerNewsSectionEl?: HTMLElement;
+  private googleNewsSectionEl?: HTMLElement;
   
   private finnhubFooterGroupEl?: HTMLElement;
   private currentsFooterGroupEl?: HTMLElement;
+  private hackerNewsFooterGroupEl?: HTMLElement;
+  private googleNewsFooterGroupEl?: HTMLElement;
 
   constructor(
     leaf: WorkspaceLeaf,
     plugin: GlobalTicker,
     currentsSpeed: TickerSpeed,
     finnhubSpeed: TickerSpeed,
+    hackerNewsSpeed: TickerSpeed,
+    googleNewsSpeed: TickerSpeed,
     currentsDirection: TickerDirection,
     finnhubDirection: TickerDirection,
+    hackerNewsDirection: TickerDirection,
+    googleNewsDirection: TickerDirection,
     currentsTextColor: string,
     finnhubPriceColor: string,
     finnhubChangeColor: string,
@@ -371,8 +389,12 @@ class MyPanelView extends ItemView {
     this.plugin = plugin;
     this.currentsSpeed = currentsSpeed;
     this.finnhubSpeed = finnhubSpeed;
+    this.hackerNewsSpeed = hackerNewsSpeed;
+    this.googleNewsSpeed = googleNewsSpeed;
     this.currentsDirection = currentsDirection;
     this.finnhubDirection = finnhubDirection;
+    this.hackerNewsDirection = hackerNewsDirection;
+    this.googleNewsDirection = googleNewsDirection;
     this.currentsTextColor = currentsTextColor;
     this.finnhubPriceColor = finnhubPriceColor;
     this.finnhubChangeColor = finnhubChangeColor;
@@ -383,13 +405,21 @@ class MyPanelView extends ItemView {
   setTickerSettings(
     currentsSpeed: TickerSpeed,
     finnhubSpeed: TickerSpeed,
+    hackerNewsSpeed: TickerSpeed,
+    googleNewsSpeed: TickerSpeed,
     currentsDirection: TickerDirection,
-    finnhubDirection: TickerDirection
+    finnhubDirection: TickerDirection,
+    hackerNewsDirection: TickerDirection,
+    googleNewsDirection: TickerDirection
   ) {
     this.currentsSpeed = currentsSpeed;
     this.finnhubSpeed = finnhubSpeed;
+    this.hackerNewsSpeed = hackerNewsSpeed;
+    this.googleNewsSpeed = googleNewsSpeed;
     this.currentsDirection = currentsDirection;
     this.finnhubDirection = finnhubDirection;
+    this.hackerNewsDirection = hackerNewsDirection;
+    this.googleNewsDirection = googleNewsDirection;
     this.applyTickerSettings();
   }
 
@@ -424,6 +454,28 @@ class MyPanelView extends ItemView {
         finnhubScroller,
         this.finnhubSpeed,
         this.finnhubDirection
+      );
+    }
+
+    const hackerNewsScroller = this.containerEl.querySelector<HTMLElement>(
+      '.scroller[data-ticker="hacker-news"]'
+    );
+    if (hackerNewsScroller) {
+      this.applyScrollerSettings(
+        hackerNewsScroller,
+        this.hackerNewsSpeed,
+        this.hackerNewsDirection
+      );
+    }
+
+    const googleNewsScroller = this.containerEl.querySelector<HTMLElement>(
+      '.scroller[data-ticker="google-news"]'
+    );
+    if (googleNewsScroller) {
+      this.applyScrollerSettings(
+        googleNewsScroller,
+        this.googleNewsSpeed,
+        this.googleNewsDirection
       );
     }
   }
@@ -468,6 +520,57 @@ class MyPanelView extends ItemView {
             metaList.createEl("li", { text: meta });
           });
         }
+      }
+    });
+  }
+
+  private async loadHackerNewsHeadlines(list: HTMLUListElement) {
+    const headlines = await this.plugin.getHackerNewsHeadlines();
+    const feedLabels = {
+      frontpage: "front page",
+      newest: "newest",
+      ask: "ask hn",
+      show: "show hn",
+      jobs: "jobs",
+      active: "active",
+    };
+    const feedLabel = feedLabels[this.plugin.settings.hackerNewsFeed];
+    list.empty();
+    headlines.forEach((headline) => {
+      const item = list.createEl("li", { cls: "headline-item" });
+      item.createEl("a", {
+        text: headline.title,
+        href: headline.url,
+        cls: "headline-link",
+        attr: { target: "_blank", rel: "noopener" },
+      });
+      const sourceLabel = getSourceLabel(headline);
+      if (sourceLabel) {
+        const metaList = item.createEl("ul", { cls: "headline-meta" });
+        metaList.createEl("li", { text: sourceLabel });
+        metaList.createEl("li", { text: feedLabel });
+      }
+    });
+  }
+
+  private async loadGoogleNewsHeadlines(list: HTMLUListElement) {
+    const headlines = await this.plugin.getGoogleNewsHeadlines();
+    const topicLabel = this.plugin.settings.googleNewsTopic
+      .toLowerCase()
+      .replace("-", " ");
+    list.empty();
+    headlines.forEach(headline => {
+      const item = list.createEl("li", { cls: "headline-item" });
+      item.createEl("a", {
+        text: headline.title,
+        href: headline.url,
+        cls: "headline-link",
+        attr: { target: "_blank", rel: "noopener" },
+      });
+      if (this.plugin.settings.showHeadlineMeta && headline.source) {
+        const metaList = item.createEl("ul", { cls: "headline-meta" });
+        metaList.createEl("li", { text: headline.source.toLowerCase() });
+        metaList.createEl("li", { text: topicLabel });
       }
     });
   }
@@ -522,6 +625,30 @@ class MyPanelView extends ItemView {
     await this.loadHeadlines(list);
   }
 
+  private async renderHackerNewsSection(section: HTMLElement) {
+    section.empty();
+    const scroller = section.createDiv({ cls: "scroller" });
+    scroller.dataset.ticker = "hacker-news";
+    scroller.dataset.speed = this.hackerNewsSpeed;
+    scroller.dataset.direction = this.hackerNewsDirection;
+    scroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
+
+    const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
+    await this.loadHackerNewsHeadlines(list);
+  }
+
+  private async renderGoogleNewsSection(section: HTMLElement) {
+    section.empty();
+    const scroller = section.createDiv({ cls: "scroller" });
+    scroller.dataset.ticker = "google-news";
+    scroller.dataset.speed = this.googleNewsSpeed;
+    scroller.dataset.direction = this.googleNewsDirection;
+    scroller.dataset.pauseOnHover = String(this.plugin.settings.pauseOnHover);
+
+    const list = scroller.createEl("ul", { cls: ["tag-list", "scroller__inner"] });
+    await this.loadGoogleNewsHeadlines(list);
+  }
+
   // Render the stocks ticker section
   // Applies stock data, speed, direction and color settings
   private async renderFinnhubSection(section: HTMLElement): Promise<number | null> {
@@ -558,9 +685,8 @@ class MyPanelView extends ItemView {
   // Render the footer for the news ticker
   private renderCurrentsFooter(group: HTMLElement) {
     group.empty();
-    group.createDiv({ cls: "ticker-divider" });
 
-    if (!this.plugin.settings.showCurrentsFooter) {
+    if (!this.plugin.settings.showTickerFooters) {
       return;
     }
 
@@ -591,7 +717,6 @@ class MyPanelView extends ItemView {
         }
       })();
     });
-
     group.createDiv({ cls: "ticker-divider" });
   }
 
@@ -599,11 +724,10 @@ class MyPanelView extends ItemView {
   private renderFinnhubFooter(group: HTMLElement, lastRefreshedAt: number | null) {
     group.empty();
 
-    if (!this.plugin.settings.showFinnhubFooter) {
+    if (!this.plugin.settings.showTickerFooters) {
       return;
     }
 
-    group.createDiv({ cls: "ticker-divider" });
     const finnhubFooter = group.createDiv({ cls: "ticker-footer" });
     finnhubFooter.createSpan({
       cls: "ticker-refresh-time",
@@ -631,6 +755,79 @@ class MyPanelView extends ItemView {
         }
       })();
     });
+    group.createDiv({ cls: "ticker-divider" });
+  }
+
+  private renderHackerNewsFooter(group: HTMLElement) {
+    group.empty();
+    if (!this.plugin.settings.showTickerFooters) {
+      return;
+    }
+
+    const footer = group.createDiv({ cls: "ticker-footer" });
+    footer.createSpan({
+      cls: "ticker-refresh-time",
+      text: formatLastRefreshed(
+        this.plugin.getHackerNewsLastRefreshedAt(),
+        this.plugin.settings.useUsDateFormat
+      ),
+    });
+    const refreshButton = footer.createEl("button", {
+      cls: ["clickable-icon", "ticker-refresh-button"],
+      attr: {
+        "aria-label": "Refresh hacker news headlines.",
+        type: "button",
+        title: "Refresh hacker news headlines",
+      },
+    });
+    setIcon(refreshButton, "refresh-cw");
+    refreshButton.addEventListener("click", () => {
+      void (async () => {
+        refreshButton.disabled = true;
+        try {
+          await this.plugin.refreshHackerNews();
+        } finally {
+          refreshButton.disabled = false;
+        }
+      })();
+    });
+    group.createDiv({ cls: "ticker-divider" });
+  }
+
+  private renderGoogleNewsFooter(group: HTMLElement) {
+    group.empty();
+    if (!this.plugin.settings.showTickerFooters) {
+      return;
+    }
+
+    const footer = group.createDiv({ cls: "ticker-footer" });
+    footer.createSpan({
+      cls: "ticker-refresh-time",
+      text: formatLastRefreshed(
+        this.plugin.getGoogleNewsLastRefreshedAt(),
+        this.plugin.settings.useUsDateFormat
+      ),
+    });
+    const refreshButton = footer.createEl("button", {
+      cls: ["clickable-icon", "ticker-refresh-button"],
+      attr: {
+        "aria-label": "Refresh google news headlines",
+        type: "button",
+        title: "Refresh google news headlines",
+      },
+    });
+    setIcon(refreshButton, "refresh-cw");
+    refreshButton.addEventListener("click", () => {
+      void (async () => {
+        refreshButton.disabled = true;
+        try {
+          await this.plugin.refreshGoogleNews();
+        } finally {
+          refreshButton.disabled = false;
+        }
+      })();
+    });
+    group.createDiv({ cls: "ticker-divider" });
   }
 
   // Main render function that sets up the enabled ticker sections
@@ -639,19 +836,55 @@ class MyPanelView extends ItemView {
     container.empty();
     const showCurrents = this.plugin.settings.showCurrentsTicker;
     const showFinnhub = this.plugin.settings.showFinnhubTicker;
+    const showHackerNews = this.plugin.settings.showHackerNewsTicker;
+    const showGoogleNews = this.plugin.settings.showGoogleNewsTicker;
 
+    this.hackerNewsSectionEl = showHackerNews
+      ? container.createDiv({ cls: "hacker-news-section" })
+      : undefined;
+    if (showHackerNews) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
+    this.hackerNewsFooterGroupEl = showHackerNews
+      ? container.createDiv({ cls: "ticker-footer-group" })
+      : undefined;
+    this.googleNewsSectionEl = showGoogleNews
+      ? container.createDiv({ cls: "google-news-section" })
+      : undefined;
+    if (showGoogleNews) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
+    this.googleNewsFooterGroupEl = showGoogleNews
+      ? container.createDiv({ cls: "ticker-footer-group" })
+      : undefined;
     this.currentsSectionEl = showCurrents
       ? container.createDiv({ cls: "currents-section" })
       : undefined;
+    if (showCurrents) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
     this.currentsFooterGroupEl = showCurrents
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
     this.finnhubSectionEl = showFinnhub
       ? container.createDiv({ cls: "finnhub-section" })
       : undefined;
+    if (showFinnhub) {
+      container.createDiv({ cls: "ticker-divider" });
+    }
     this.finnhubFooterGroupEl = showFinnhub
       ? container.createDiv({ cls: "ticker-footer-group" })
       : undefined;
+
+    if (showHackerNews && this.hackerNewsSectionEl && this.hackerNewsFooterGroupEl) {
+      await this.renderHackerNewsSection(this.hackerNewsSectionEl);
+      this.renderHackerNewsFooter(this.hackerNewsFooterGroupEl);
+    }
+
+    if (showGoogleNews && this.googleNewsSectionEl && this.googleNewsFooterGroupEl) {
+      await this.renderGoogleNewsSection(this.googleNewsSectionEl);
+      this.renderGoogleNewsFooter(this.googleNewsFooterGroupEl);
+    }
 
     if (showCurrents && this.currentsSectionEl && this.currentsFooterGroupEl) {
       await this.renderCurrentsSection(this.currentsSectionEl);
@@ -664,6 +897,7 @@ class MyPanelView extends ItemView {
       );
       this.renderFinnhubFooter(this.finnhubFooterGroupEl, finnhubLastRefreshedAt);
     }
+
     initTicker(container);
   }
 
@@ -706,6 +940,36 @@ class MyPanelView extends ItemView {
     }
     initTicker(this.finnhubSectionEl);
   }
+
+  async refreshHackerNews() {
+    if (!this.plugin.settings.showHackerNewsTicker) {
+      return;
+    }
+    if (!this.hackerNewsSectionEl) {
+      await this.render();
+      return;
+    }
+    await this.renderHackerNewsSection(this.hackerNewsSectionEl);
+    if (this.hackerNewsFooterGroupEl) {
+      this.renderHackerNewsFooter(this.hackerNewsFooterGroupEl);
+    }
+    initTicker(this.hackerNewsSectionEl);
+  }
+
+  async refreshGoogleNews() {
+    if (!this.plugin.settings.showGoogleNewsTicker) {
+      return;
+    }
+    if (!this.googleNewsSectionEl) {
+      await this.render();
+      return;
+    }
+    await this.renderGoogleNewsSection(this.googleNewsSectionEl);
+    if (this.googleNewsFooterGroupEl) {
+      this.renderGoogleNewsFooter(this.googleNewsFooterGroupEl);
+    }
+    initTicker(this.googleNewsSectionEl);
+  }
 }
 
 // Main plugin class that Obsidian interacts with, handles loading, settings, commands and data fetching/caching
@@ -714,6 +978,8 @@ export default class GlobalTicker extends Plugin {
 	settings!: GlobalTickerSettings;
 	private headlinesCache: HeadlinesCache | null = null; 
 	private stockQuotesCache: StockQuotesCache | null = null;
+  private hackerNewsCache: HackerNewsCache | null = null;
+  private googleNewsCache: GoogleNewsCache | null = null;
   private readonly missingSecretNotices = new Set<string>(); 
 
 	async onload() {
@@ -728,8 +994,12 @@ export default class GlobalTicker extends Plugin {
 					this,
 					this.settings.currentsTickerSpeed,
 					this.settings.finnhubTickerSpeed,
+					this.settings.hackerNewsTickerSpeed,
+					this.settings.googleNewsTickerSpeed,
 					this.settings.currentsTickerDirection,
 					this.settings.finnhubTickerDirection,
+					this.settings.hackerNewsTickerDirection,
+					this.settings.googleNewsTickerDirection,
 					this.settings.currentsTextColor,
 					this.settings.finnhubPriceColor,
 					this.settings.finnhubChangeColor,
@@ -1032,6 +1302,119 @@ export default class GlobalTicker extends Plugin {
 		return FALLBACK_HEADLINES.slice(0, resolvedLimit);
 	}
 
+  async getHackerNewsHeadlines(
+    options?: { forceRefresh?: boolean }
+  ): Promise<HeadlineItem[]> {
+    const resolvedLimit = Number.isFinite(this.settings.hackerNewsHeadlineLimit)
+      ? Math.min(20, Math.max(1, Math.floor(this.settings.hackerNewsHeadlineLimit)))
+      : 10;
+    const cacheKey = JSON.stringify({
+      feed: this.settings.hackerNewsFeed,
+      searchTerms: this.settings.hackerNewsSearchTerms,
+      limit: resolvedLimit,
+    });
+    const cacheMatches = this.hackerNewsCache?.cacheKey === cacheKey;
+    if (!options?.forceRefresh && cacheMatches && this.hackerNewsCache) {
+      return this.hackerNewsCache.headlines.slice(0, resolvedLimit);
+    }
+    try {
+      const headlines = await fetchHackerNewsHeadlines({
+        feed: this.settings.hackerNewsFeed,
+        searchTerms: this.settings.hackerNewsSearchTerms,
+        limit: resolvedLimit,
+      });
+      const normalized = headlines.map((headline) => ({
+        title: headline.title,
+        url: headline.url,
+      }));
+      this.hackerNewsCache = {
+        cacheKey,
+        fetchedAt: Date.now(),
+        headlines: normalized,
+      };
+      return normalized;
+    } catch (error) {
+      console.error("Failed to fetch Hacker News headlines", error);
+      if (cacheMatches && this.hackerNewsCache) {
+        return this.hackerNewsCache.headlines.slice(0, resolvedLimit);
+      }
+      return [];
+    }
+  }
+
+  async refreshHackerNews(): Promise<boolean> {
+    const previousFetchedAt = this.hackerNewsCache?.fetchedAt ?? null;
+    await this.getHackerNewsHeadlines({ forceRefresh: true });
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
+    await Promise.all(
+      leaves.map(async leaf => {
+        const view = leaf.view;
+        if (view instanceof MyPanelView) {
+          await view.refreshHackerNews();
+        }
+      })
+    );
+    return this.hackerNewsCache?.fetchedAt !== previousFetchedAt;
+  }
+
+  async getGoogleNewsHeadlines(
+    options?: { forceRefresh?: boolean }
+  ): Promise<HeadlineItem[]> {
+    const resolvedLimit = Number.isFinite(this.settings.googleNewsHeadlineLimit)
+      ? Math.min(20, Math.max(1, Math.floor(this.settings.googleNewsHeadlineLimit)))
+      : 10;
+    const cacheKey = JSON.stringify({
+      topic: this.settings.googleNewsTopic,
+      language: this.settings.googleNewsLanguage,
+      country: this.settings.googleNewsCountry,
+      limit: resolvedLimit,
+    });
+    const cacheMatches = this.googleNewsCache?.cacheKey === cacheKey;
+    if (!options?.forceRefresh && cacheMatches && this.googleNewsCache) {
+      return this.googleNewsCache.headlines.slice(0, resolvedLimit);
+    }
+    try {
+      const headlines = await fetchGoogleNewsHeadlines({
+        topic: this.settings.googleNewsTopic,
+        language: this.settings.googleNewsLanguage,
+        country: this.settings.googleNewsCountry,
+        limit: resolvedLimit,
+      });
+      const normalized = headlines.map(headline => ({
+        title: headline.title,
+        url: headline.url,
+        source: headline.source,
+      }));
+      this.googleNewsCache = {
+        cacheKey,
+        fetchedAt: Date.now(),
+        headlines: normalized,
+      };
+      return normalized;
+    } catch (error) {
+      console.error("Failed to fetch Google News headlines", error);
+      if (cacheMatches && this.googleNewsCache) {
+        return this.googleNewsCache.headlines.slice(0, resolvedLimit);
+      }
+      return [];
+    }
+  }
+
+  async refreshGoogleNews(): Promise<boolean> {
+    const previousFetchedAt = this.googleNewsCache?.fetchedAt ?? null;
+    await this.getGoogleNewsHeadlines({ forceRefresh: true });
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
+    await Promise.all(
+      leaves.map(async leaf => {
+        const view = leaf.view;
+        if (view instanceof MyPanelView) {
+          await view.refreshGoogleNews();
+        }
+      })
+    );
+    return this.googleNewsCache?.fetchedAt !== previousFetchedAt;
+  }
+
   // Refresh headlines section, clears cache and re-fetches data, then updates all open panels
 	async refreshHeadlines() {
     const resolvedLimit = Number.isFinite(this.settings.currentsLimit)
@@ -1193,6 +1576,14 @@ export default class GlobalTicker extends Plugin {
 		return this.stockQuotesCache?.fetchedAt ?? null;
 	}
 
+  getHackerNewsLastRefreshedAt(): number | null {
+    return this.hackerNewsCache?.fetchedAt ?? null;
+  }
+
+  getGoogleNewsLastRefreshedAt(): number | null {
+    return this.googleNewsCache?.fetchedAt ?? null;
+  }
+
   // Updates ticker settings (speed and direction) for all open panels
 	updateTickerSettings() {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MY_PANEL);
@@ -1202,8 +1593,12 @@ export default class GlobalTicker extends Plugin {
 				view.setTickerSettings(
 					this.settings.currentsTickerSpeed,
 					this.settings.finnhubTickerSpeed,
+					this.settings.hackerNewsTickerSpeed,
+					this.settings.googleNewsTickerSpeed,
 					this.settings.currentsTickerDirection,
-					this.settings.finnhubTickerDirection
+					this.settings.finnhubTickerDirection,
+					this.settings.hackerNewsTickerDirection,
+					this.settings.googleNewsTickerDirection
 				);
 			}
 		});

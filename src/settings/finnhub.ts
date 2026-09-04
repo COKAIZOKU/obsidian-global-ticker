@@ -25,7 +25,7 @@ const createLinkFragment = (leadingText : string, linkText : string, href : stri
 
 export const getFinnhubSettingDefinitions = (plugin : GlobalTicker) : SettingDefinitionItem < SettingsKey > => ({
     type: "group",
-    heading: "Finnhub stocks settings",
+    heading: "Finnhub Stocks settings",
     items: [
         {
             name: "Show Finnhub ticker",
@@ -98,13 +98,6 @@ export const getFinnhubSettingDefinitions = (plugin : GlobalTicker) : SettingDef
                 type: "color",
                 key: "finnhubPriceColor",
                 defaultValue: getTextFaintHex()
-            }
-        }, {
-            name: "Show stocks footer",
-            desc: "Toggle the last refreshed info and refresh button for stocks.",
-            control: {
-                type: "toggle",
-                key: "showFinnhubFooter"
             }
         }, {
             name: "Refresh stocks data",

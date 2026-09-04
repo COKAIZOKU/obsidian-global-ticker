@@ -4,7 +4,6 @@ from "obsidian";
 import type GlobalTicker from "../main";
 import type {GlobalTickerSettings}
 from "../settings";
-import {getTextFaintHex} from "./color";
 
 type SettingsKey = keyof GlobalTickerSettings;
 
@@ -137,7 +136,7 @@ const CURRENTS_LANGUAGES : Record < string,
 
 export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDefinitionItem < SettingsKey > => ({
     type: "group",
-    heading: "Currents news settings",
+    heading: "Currents News settings",
     items: [
         {
             name: "Show Currents ticker",
@@ -158,8 +157,8 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
                 }));
             }
         }, {
-            name: "News ticker speed",
-            desc: "Choose how fast the news ticker scrolls.",
+            name: "Currents ticker speed",
+            desc: "Choose how fast the Currents ticker scrolls.",
             control: {
                 type: "dropdown",
                 key: "currentsTickerSpeed",
@@ -171,8 +170,8 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
                 }
             }
         }, {
-            name: "News ticker direction",
-            desc: "Choose the news ticker direction.",
+            name: "Currents ticker direction",
+            desc: "Choose the Currents ticker direction.",
             control: {
                 type: "dropdown",
                 key: "currentsTickerDirection",
@@ -239,27 +238,11 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
                     : "Enter a whole number from 1 to 10."
             }
         }, {
-            name: "Headline underline text color",
-            desc: "Select any color.",
-            control: {
-                type: "color",
-                key: "currentsTextColor",
-                defaultValue: getTextFaintHex()
-            }
-        }, {
             name: "Show headline underline",
             desc: "Toggle the source and category line under each headline.",
             control: {
                 type: "toggle",
                 key: "showHeadlineMeta"
-            }
-        }, {
-            name: "Show news footer",
-            desc: "Toggle the last refreshed info and refresh button for news. Beware of the daily " +
-                    "limit of 20 requests with the free API key.",
-            control: {
-                type: "toggle",
-                key: "showCurrentsFooter"
             }
         }, {
             name: "Refresh headlines",

@@ -6,6 +6,10 @@ import type {SettingDefinitionItem} from "obsidian";
 import GlobalTicker from "./main";
 import {getCurrentsSettingDefinitions} from "./settings/currents";
 import {getFinnhubSettingDefinitions} from "./settings/finnhub";
+import {getHackerNewsSettingDefinitions} from "./settings/hacker-news";
+import type {HackerNewsFeed} from "./rss/hacker-news";
+import {getGoogleNewsSettingDefinitions} from "./settings/google-news";
+import type {GoogleNewsTopic} from "./rss/google-news";
 import {getTextFaintHex} from "./settings/color";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
@@ -15,15 +19,27 @@ export interface GlobalTickerSettings {
     mySetting : string;
     currentsTickerSpeed : TickerSpeed;
     finnhubTickerSpeed : TickerSpeed;
+    hackerNewsTickerSpeed : TickerSpeed;
     currentsTickerDirection : TickerDirection;
     finnhubTickerDirection : TickerDirection;
-    showCurrentsFooter : boolean;
-    showFinnhubFooter : boolean;
+    hackerNewsTickerDirection : TickerDirection;
+    showTickerFooters : boolean;
     useUsDateFormat : boolean;
     refreshOnAppOpen : boolean;
     pauseOnHover : boolean;
     showCurrentsTicker : boolean;
     showFinnhubTicker : boolean;
+    showHackerNewsTicker : boolean;
+    hackerNewsHeadlineLimit : number;
+    hackerNewsFeed : HackerNewsFeed;
+    hackerNewsSearchTerms : string;
+    googleNewsTickerSpeed : TickerSpeed;
+    googleNewsTickerDirection : TickerDirection;
+    showGoogleNewsTicker : boolean;
+    googleNewsHeadlineLimit : number;
+    googleNewsTopic : GoogleNewsTopic;
+    googleNewsLanguage : string;
+    googleNewsCountry : string;
     showHeadlineMeta : boolean;
     tickerSpeed?: TickerSpeed;
     currentsTextColor : string;
@@ -45,15 +61,27 @@ export const DEFAULT_SETTINGS : GlobalTickerSettings = {
     mySetting: 'default',
     currentsTickerSpeed: "slow",
     finnhubTickerSpeed: "slow",
+    hackerNewsTickerSpeed: "slow",
     currentsTickerDirection: "left",
     finnhubTickerDirection: "left",
-    showCurrentsFooter: true,
-    showFinnhubFooter: true,
+    hackerNewsTickerDirection: "left",
+    showTickerFooters: true,
     useUsDateFormat: false,
     refreshOnAppOpen: false,
     pauseOnHover: true,
     showCurrentsTicker: true,
     showFinnhubTicker: true,
+    showHackerNewsTicker: true,
+    hackerNewsHeadlineLimit: 10,
+    hackerNewsFeed: "frontpage",
+    hackerNewsSearchTerms: "",
+    googleNewsTickerSpeed: "slow",
+    googleNewsTickerDirection: "left",
+    showGoogleNewsTicker: true,
+    googleNewsHeadlineLimit: 10,
+    googleNewsTopic: "top-stories",
+    googleNewsLanguage: "en-US",
+    googleNewsCountry: "US",
     showHeadlineMeta: true,
     currentsTextColor: "",
     finnhubChangeColor: "",
@@ -112,8 +140,24 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                         desc: "Pause ticker scrolling while the pointer is over it.",
                         control: {type: "toggle", key: "pauseOnHover"},
                     },
+                    {
+                        name: "Show ticker footers",
+                        desc: "Show or hide the footer for every ticker.",
+                        control: {type: "toggle", key: "showTickerFooters"},
+                    },
+                    {
+                        name: "Headline underline text color",
+                        desc: "Select any color.",
+                        control: {
+                            type: "color",
+                            key: "currentsTextColor",
+                            defaultValue: getTextFaintHex(),
+                        },
+                    },
                 ],
             },
+            getHackerNewsSettingDefinitions(this.plugin),
+            getGoogleNewsSettingDefinitions(this.plugin),
             getCurrentsSettingDefinitions(this.plugin),
             getFinnhubSettingDefinitions(this.plugin),
         ];
@@ -131,6 +175,9 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "currentsCategory",
             "currentsDomains",
             "currentsExcludeDomains",
+            "hackerNewsSearchTerms",
+            "googleNewsLanguage",
+            "googleNewsCountry",
         ]);
         let normalizedValue = typeof value === "string" && trimmedKeys.has(key)
             ? value.trim()
@@ -148,8 +195,16 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "pauseOnHover",
             "showCurrentsTicker",
             "showFinnhubTicker",
-            "showCurrentsFooter",
-            "showFinnhubFooter",
+            "showHackerNewsTicker",
+            "showTickerFooters",
+            "showGoogleNewsTicker",
+            "googleNewsHeadlineLimit",
+            "googleNewsTopic",
+            "googleNewsLanguage",
+            "googleNewsCountry",
+            "hackerNewsHeadlineLimit",
+            "hackerNewsFeed",
+            "hackerNewsSearchTerms",
             "showHeadlineMeta",
         ]);
         if (panelKeys.has(key)) {
@@ -162,6 +217,10 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
             "currentsTickerDirection",
             "finnhubTickerSpeed",
             "finnhubTickerDirection",
+            "hackerNewsTickerSpeed",
+            "hackerNewsTickerDirection",
+            "googleNewsTickerSpeed",
+            "googleNewsTickerDirection",
         ]);
         if (tickerKeys.has(key)) {
             this.plugin.updateTickerSettings();
