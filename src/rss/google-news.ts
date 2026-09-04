@@ -30,9 +30,13 @@ const parseFeed = (xml: string, limit: number): GoogleNewsHeadline[] => {
 
     return Array.from(document.querySelectorAll("item"))
         .map(item => {
-            const title = item.querySelector("title")?.textContent?.trim() ?? "";
+            const rawTitle = item.querySelector("title")?.textContent?.trim() ?? "";
             const url = item.querySelector("link")?.textContent?.trim() ?? "";
             const source = item.querySelector("source")?.textContent?.trim() ?? "";
+            const sourceSuffix = ` - ${source}`;
+            const title = source && rawTitle.endsWith(sourceSuffix)
+                ? rawTitle.slice(0, -sourceSuffix.length)
+                : rawTitle;
             if (!title || !url) {
                 return null;
             }
