@@ -1,7 +1,7 @@
 {
 	"id": "global-ticker",
 	"name": "Global Ticker",
-	"version": "2.0.0",
+	"version": "2.1.0",
 	"minAppVersion": "1.13.0",
 	"description": "Adds a panel that provides a global ticker for news and stock updates.",
 	"author": "COKAIZOKU",
