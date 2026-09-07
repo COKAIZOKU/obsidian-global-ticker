@@ -834,6 +834,7 @@ class MyPanelView extends ItemView {
   private async render() {
     const container = this.containerEl; // main content area
     container.empty();
+    this.applyColorVars();
     const showCurrents = this.plugin.settings.showCurrentsTicker;
     const showFinnhub = this.plugin.settings.showFinnhubTicker;
     const showHackerNews = this.plugin.settings.showHackerNewsTicker;
