@@ -14,7 +14,7 @@ If you only want the Hacker News headlines, [Obsidian HackerNews](https://github
   - [👾 Hacker News](#hacker-news)
   - [📰 Google News](#google-news)
   - [🌊 Currents News](#currents-news)
-  - [☁️ Finnhub Stocks](#finnhub-stocks)
+  - [💸 Finnhub Stocks](#finnhub-stocks)
 - [💾 Cache](#cache)
 - [⚠️ Limits](#limits)
 
@@ -60,7 +60,7 @@ The [Currents News API](https://currentsapi.services/en) provides global headlin
 The headlines are clickable and will open the original source for more information. 
 
 <a name="finnhub-stocks"></a>
-### ☁️ Finnhub Stocks
+### 💸 Finnhub Stocks
 
 The stock ticker uses the [Finnhub API](https://finnhub.io/) to retrieve global stock quotes. It displays the last fetched price and percentage change. 
 - `Symbol:` Select the stock symbols to show. To see which symbols are supported, refer to `/v1/stock/symbol`, which includes a large list of available options.
