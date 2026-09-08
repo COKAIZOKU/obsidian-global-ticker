@@ -1,27 +1,13 @@
+import {createLinkFragment} from "./function/create-link-fragment";
 import {Notice, SecretComponent} from "obsidian";
 import type {SettingDefinitionItem}
 from "obsidian";
 import type GlobalTicker from "../main";
 import type {GlobalTickerSettings}
 from "../settings";
-import {getTextFaintHex} from "./color";
+import {getTextFaintHex} from "./function/color";
 
 type SettingsKey = keyof GlobalTickerSettings;
-
-const createLinkFragment = (leadingText : string, linkText : string, href : string, trailingText : string) : DocumentFragment => {
-    const fragment = document.createDocumentFragment();
-    if (leadingText) {
-        fragment.append(document.createTextNode(leadingText));
-    }
-    const link = document.createElement("a");
-    link.textContent = linkText;
-    link.href = href;
-    fragment.append(link);
-    if (trailingText) {
-        fragment.append(document.createTextNode(trailingText));
-    }
-    return fragment;
-};
 
 export const getFinnhubSettingDefinitions = (plugin : GlobalTicker) : SettingDefinitionItem < SettingsKey > => ({
     type: "group",

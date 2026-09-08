@@ -1,3 +1,4 @@
+import {createLinkFragment} from "./function/create-link-fragment";
 import {Notice, SecretComponent} from "obsidian";
 import type {SettingDefinitionItem}
 from "obsidian";
@@ -6,21 +7,6 @@ import type {GlobalTickerSettings}
 from "../settings";
 
 type SettingsKey = keyof GlobalTickerSettings;
-
-const createLinkFragment = (leadingText : string, linkText : string, href : string, trailingText : string) : DocumentFragment => {
-    const fragment = document.createDocumentFragment();
-    if (leadingText) {
-        fragment.append(document.createTextNode(leadingText));
-    }
-    const link = document.createElement("a");
-    link.textContent = linkText;
-    link.href = href;
-    fragment.append(link);
-    if (trailingText) {
-        fragment.append(document.createTextNode(trailingText));
-    }
-    return fragment;
-};
 
 const CURRENTS_REGIONS : Record < string,
     string > = {
@@ -186,7 +172,7 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
             control: {
                 type: "textarea",
                 key: "currentsCategory",
-                placeholder: "Science, food"
+                placeholder: "science, food"
             }
         }, {
             name: "Domains",
@@ -196,7 +182,7 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
             control: {
                 type: "textarea",
                 key: "currentsDomains",
-                placeholder: "Bbc.com, nytimes.com"
+                placeholder: "bbc.com, nytimes.com"
             }
         }, {
             name: "Exclude domains",
@@ -205,7 +191,7 @@ export const getCurrentsSettingDefinitions = (plugin : GlobalTicker) : SettingDe
             control: {
                 type: "textarea",
                 key: "currentsExcludeDomains",
-                placeholder: "Bbc.com, nytimes.com"
+                placeholder: "bbc.com, nytimes.com"
             }
         }, {
             name: "Region",

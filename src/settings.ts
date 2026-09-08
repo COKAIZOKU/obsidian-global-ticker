@@ -10,7 +10,7 @@ import {getHackerNewsSettingDefinitions} from "./settings/hacker-news";
 import type {HackerNewsFeed} from "./rss/hacker-news";
 import {getGoogleNewsSettingDefinitions} from "./settings/google-news";
 import type {GoogleNewsTopic} from "./rss/google-news";
-import {getTextFaintHex} from "./settings/color";
+import {getTextFaintHex} from "./settings/function/color";
 import {getXmlSettingDefinitions} from "./settings/xml";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
