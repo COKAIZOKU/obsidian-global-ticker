@@ -11,6 +11,7 @@ import { fetchCurrentsHeadlines } from "./api/currents";
 import { fetchFinnhubStockQuotes, normalizeStockSymbols, StockQuote } from "./api/finnhub";
 import { fetchHackerNewsHeadlines } from "./rss/hacker-news";
 import { fetchGoogleNewsHeadlines } from "./rss/google-news";
+import { renderXmlTicker } from "./rss/xml";
 
 // Constants related to ticker cloning logic
 const VIEW_TYPE_MY_PANEL = "global-ticker-panel";
@@ -421,6 +422,12 @@ class MyPanelView extends ItemView {
     this.hackerNewsDirection = hackerNewsDirection;
     this.googleNewsDirection = googleNewsDirection;
     this.applyTickerSettings();
+    const xmlScroller = this.containerEl.querySelector<HTMLElement>('.scroller[data-ticker="xmlReaderTicker"]');
+    if (xmlScroller) {
+      xmlScroller.dataset.speed = this.plugin.settings.xmlReaderTickerSpeed;
+      xmlScroller.dataset.direction = this.plugin.settings.xmlReaderTickerDirection;
+      applyTickerSpeed(xmlScroller);
+    }
   }
 
   // Update stock color settings
@@ -840,6 +847,14 @@ class MyPanelView extends ItemView {
     const showHackerNews = this.plugin.settings.showHackerNewsTicker;
     const showGoogleNews = this.plugin.settings.showGoogleNewsTicker;
 
+    if (this.plugin.settings.xmlReaderTicker) {
+      const section = container.createDiv({cls: "xml-reader-section"});
+      container.createDiv({cls: "ticker-divider"});
+      const footerGroup = container.createDiv({cls: "ticker-footer-group"});
+      const fetchedAt = await renderXmlTicker(section, this.plugin.settings);
+      this.renderXmlFooter(footerGroup, section, fetchedAt);
+    }
+
     this.hackerNewsSectionEl = showHackerNews
       ? container.createDiv({ cls: "hacker-news-section" })
       : undefined;
@@ -900,6 +915,35 @@ class MyPanelView extends ItemView {
     }
 
     initTicker(container);
+  }
+
+  private renderXmlFooter(group: HTMLElement, section: HTMLElement, fetchedAt: number | null) {
+    if (!this.plugin.settings.showTickerFooters) return;
+    const footer = group.createDiv({cls: "ticker-footer"});
+    const timestamp = footer.createSpan({
+      cls: "ticker-refresh-time",
+      text: formatLastRefreshed(fetchedAt, this.plugin.settings.useUsDateFormat),
+    });
+    const refreshButton = footer.createEl("button", {
+      cls: ["clickable-icon", "ticker-refresh-button"],
+      attr: {
+        "aria-label": "Refresh XML headlines",
+        type: "button",
+        title: "Refresh XML headlines",
+      },
+    });
+    setIcon(refreshButton, "refresh-cw");
+    this.registerDomEvent(refreshButton, "click", async () => {
+      refreshButton.disabled = true;
+      try {
+        const refreshedAt = await renderXmlTicker(section, this.plugin.settings);
+        timestamp.setText(formatLastRefreshed(refreshedAt, this.plugin.settings.useUsDateFormat));
+        initTicker(section);
+      } finally {
+        refreshButton.disabled = false;
+      }
+    });
+    group.createDiv({cls: "ticker-divider"});
   }
 
   async onOpen() {

@@ -10,12 +10,18 @@ import {getHackerNewsSettingDefinitions} from "./settings/hacker-news";
 import type {HackerNewsFeed} from "./rss/hacker-news";
 import {getGoogleNewsSettingDefinitions} from "./settings/google-news";
 import type {GoogleNewsTopic} from "./rss/google-news";
-import {getTextFaintHex} from "./settings/color";
+import {getTextFaintHex} from "./settings/function/color";
+import {getXmlSettingDefinitions} from "./settings/xml";
 
 export type TickerSpeed = "fast" | "slow" | "medium" | "very-slow";
 export type TickerDirection = "left" | "right";
 
 export interface GlobalTickerSettings {
+    xmlReaderTicker: boolean;
+    xmlReaderTickerSpeed: TickerSpeed;
+    xmlReaderTickerDirection: TickerDirection;
+    xmlReaderLinks: string;
+    xmlReaderHeadlineLimit: number;
     mySetting : string;
     currentsTickerSpeed : TickerSpeed;
     finnhubTickerSpeed : TickerSpeed;
@@ -58,6 +64,11 @@ export interface GlobalTickerSettings {
 }
 
 export const DEFAULT_SETTINGS : GlobalTickerSettings = {
+    xmlReaderTicker: false,
+    xmlReaderTickerSpeed: "slow",
+    xmlReaderTickerDirection: "left",
+    xmlReaderLinks: "",
+    xmlReaderHeadlineLimit: 10,
     mySetting: 'default',
     currentsTickerSpeed: "slow",
     finnhubTickerSpeed: "slow",
@@ -161,6 +172,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
                     },
                 ],
             },
+            getXmlSettingDefinitions(this.plugin),
             getHackerNewsSettingDefinitions(this.plugin),
             getGoogleNewsSettingDefinitions(this.plugin),
             getCurrentsSettingDefinitions(this.plugin),
@@ -177,6 +189,7 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
 
     async setControlValue(key : string, value : unknown) : Promise < void > {
         const trimmedKeys = new Set([
+            "xmlReaderLinks",
             "currentsCategory",
             "currentsDomains",
             "currentsExcludeDomains",
@@ -196,6 +209,9 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         await super.setControlValue(key, normalizedValue);
 
         const panelKeys = new Set([
+            "xmlReaderTicker",
+            "xmlReaderLinks",
+            "xmlReaderHeadlineLimit",
             "useUsDateFormat",
             "pauseOnHover",
             "showCurrentsTicker",
@@ -218,6 +234,8 @@ export class GlobalTickerSettingTab extends PluginSettingTab {
         }
 
         const tickerKeys = new Set([
+            "xmlReaderTickerSpeed",
+            "xmlReaderTickerDirection",
             "currentsTickerSpeed",
             "currentsTickerDirection",
             "finnhubTickerSpeed",
