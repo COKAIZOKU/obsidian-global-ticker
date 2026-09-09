@@ -1,6 +1,6 @@
 #  🌐 Global Ticker for Obsidian
 
-The **Global Ticker** plugin adds customizable information bars to Obsidian, including news Ticker from several sources (Currents, Google News, and Hacker News) and a bottom ticker for stock market updates powered by Finnhub. Most aspects of the tickers can be customized to your liking! The APIs were picked from the [try Public APIs for free](https://github.com/public-apis/public-apis) repository.
+The **Global Ticker** plugin adds customizable information bars to Obsidian, including news Ticker from several sources (Currents, Google News, and Hacker News and custom RSS XML feeds) and a bottom ticker for stock market updates powered by Finnhub. Most aspects of the tickers can be customized to your liking! The APIs were picked from the [try Public APIs for free](https://github.com/public-apis/public-apis) repository.
 
 ![cover](https://github.com/user-attachments/assets/963d00b8-5b7b-4b93-b1ba-f92cddf849ae)
 
