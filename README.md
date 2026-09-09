@@ -11,6 +11,7 @@ If you only want the Hacker News headlines, [Obsidian HackerNews](https://github
 ## 📑 Index
 
 - [⚙️ Settings](#settings)
+  - [📚 XML Reader](#xml-reader)
   - [👾 Hacker News](#hacker-news)
   - [📰 Google News](#google-news)
   - [🌊 Currents News](#currents-news)
@@ -32,6 +33,15 @@ General settings found are:
 	- `underline:` Contains the source and category of each headline. Not all fetched headlines have categories, so this field may be empty. If a headline displays a category different from the selected ones, it's because headlines can belong to multiple categories.
 	- **Color:** Pick the color of the underline text.
 - **Headline Limit:** Sets the maximum number of headlines to display. The upper limit depends on the source. The default is 10 headlines.
+
+<a name="xml-reader"></a>
+### 📚 XML Reader
+
+The XML Reader lets users add RSS feeds in XML format and display the latest news from those feeds.
+- `RSS Feed URLs:` Enter one or more RSS feed URLs, separated by commas.
+	- Headlines are displayed by alternating between feeds in the order the URLs were entered.
+ 	- You can check for feeds [here](https://rss.feedspot.com/world_news_rss_feeds/).
+    - Not all feeds are compatible, as some may not use the XML structure expected by the parser.
 
 <a name="hacker-news"></a>
 ### 👾 Hacker News
@@ -76,3 +86,4 @@ Headlines are stored in a persistent cache within the plugin's data storage. Thi
 
 - Some sources included in Currents News and Google News may be behind paywalls. For Currents News, you may want to exclude those domains if you do not have a subscription.
 - The number of headlines displayed depends on how many headlines are actually available for the selected settings. For example, if the headline limit is set to 10 but only 5 matching headlines are available, only those 5 will be displayed.
+- Not all feeds are compatible with the XML reader.
